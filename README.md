@@ -5,14 +5,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/your-username/authx/stargazers">
-    <img src="https://img.shields.io/github/stars/your-username/authx.svg" alt="GitHub Stars">
+  <a href="https://flutter.dev">
+    <img src="https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white" alt="Flutter">
   </a>
-  <a href="https://github.com/your-username/authx/issues">
-    <img src="https://img.shields.io/github/issues/your-username/authx.svg" alt="GitHub Issues">
+  <a href="https://dart.dev">
+    <img src="https://img.shields.io/badge/dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white" alt="Dart">
   </a>
   <a href="https://github.com/your-username/authx/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/your-username/authx.svg" alt="License">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge" alt="License: MIT">
   </a>
 </p>
 
