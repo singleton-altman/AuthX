@@ -32,10 +32,10 @@ class _AuthXAppState extends State<AuthXApp> {
         builder: (context, themeProvider, _) {
           return MaterialApp(
             title: 'AuthX TOTP',
-            theme: AppTheme.lightTheme(),
-            darkTheme: AppTheme.darkTheme(),
+            theme: AppTheme.lightTheme(themeProvider.primaryColor),
+            darkTheme: AppTheme.darkTheme(themeProvider.primaryColor),
             themeMode: themeProvider.themeMode,
-            home: const HomeScreen(),
+            home: HomeScreen(), // 移除const修饰符
             debugShowCheckedModeBanner: false,
           );
         },

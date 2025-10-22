@@ -4,6 +4,7 @@ import 'package:authx/providers/theme_provider.dart';
 import 'package:authx/ui/screens/about_screen.dart';
 import 'package:authx/ui/screens/debug_screen.dart';
 import 'package:authx/ui/screens/appearance_settings_screen.dart';
+import 'package:authx/utils/app_theme.dart'; // 添加对 app_theme.dart 的导入
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -103,6 +104,7 @@ class SettingsScreen extends StatelessWidget {
     
     return Column(
       children: [
+        // 原有的主题和显示选项
         _buildSettingsOption(
           context,
           icon: Icons.brightness_medium,
@@ -112,16 +114,12 @@ class SettingsScreen extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => const AppearanceSettingsScreen(),
+                builder: (_) => AppearanceSettingsScreen(),
               ),
             );
           },
         ),
-        const Divider(
-          height: 1,
-          indent: 72,
-          endIndent: 16,
-        ),
+        const Divider(height: 1, indent: 72, endIndent: 16),
       ],
     );
   }

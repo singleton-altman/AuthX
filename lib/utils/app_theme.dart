@@ -24,11 +24,12 @@ class AppTheme {
   static const double borderRadius = 12.0;
   
   // 创建浅色主题
-  static ThemeData lightTheme() {
+  static ThemeData lightTheme([Color? primaryColor]) {
+    final color = primaryColor ?? AppTheme.primaryColor;
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      primaryColor: primaryColor,
+      primaryColor: color,
       scaffoldBackgroundColor: lightBackgroundColor,
       cardTheme: const CardThemeData(
         color: lightSurfaceColor,
@@ -78,15 +79,15 @@ class AppTheme {
         ),
       ),
       colorScheme: ColorScheme.fromSeed(
-        seedColor: primaryColor,
+        seedColor: color,
         brightness: Brightness.light,
       ).copyWith(
-        primary: primaryColor,
+        primary: color,
         surface: lightSurfaceColor,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ButtonStyle(
-          backgroundColor: WidgetStateProperty.all<Color>(primaryColor),
+          backgroundColor: WidgetStateProperty.all<Color>(color),
           foregroundColor: WidgetStateProperty.all<Color>(Colors.white),
           shape: WidgetStateProperty.all<RoundedRectangleBorder>(
             RoundedRectangleBorder(
@@ -98,8 +99,8 @@ class AppTheme {
           ),
         ),
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: primaryColor,
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: color,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(16)),
@@ -116,7 +117,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: primaryColor, width: 2),
+          borderSide: BorderSide(color: color, width: 2),
         ),
         filled: true,
         fillColor: lightSurfaceColor,
@@ -125,11 +126,12 @@ class AppTheme {
   }
   
   // 创建深色主题
-  static ThemeData darkTheme() {
+  static ThemeData darkTheme([Color? primaryColor]) {
+    final color = primaryColor ?? AppTheme.primaryColor;
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      primaryColor: primaryColor,
+      primaryColor: color,
       scaffoldBackgroundColor: darkBackgroundColor,
       cardTheme: const CardThemeData(
         color: darkSurfaceColor,
@@ -179,15 +181,15 @@ class AppTheme {
         ),
       ),
       colorScheme: ColorScheme.fromSeed(
-        seedColor: primaryColor,
+        seedColor: color,
         brightness: Brightness.dark,
       ).copyWith(
-        primary: primaryColor,
+        primary: color,
         surface: darkSurfaceColor,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ButtonStyle(
-          backgroundColor: WidgetStateProperty.all<Color>(primaryColor),
+          backgroundColor: WidgetStateProperty.all<Color>(color),
           foregroundColor: WidgetStateProperty.all<Color>(Colors.white),
           shape: WidgetStateProperty.all<RoundedRectangleBorder>(
             RoundedRectangleBorder(
@@ -199,8 +201,8 @@ class AppTheme {
           ),
         ),
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: primaryColor,
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: color,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(16)),
@@ -217,7 +219,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primaryColor, width: 2),
+          borderSide: BorderSide(color: color, width: 2),
         ),
         filled: true,
         fillColor: darkSurfaceColor,

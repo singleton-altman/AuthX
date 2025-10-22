@@ -6,12 +6,9 @@ class AboutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('关于'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('关于'), centerTitle: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -20,34 +17,20 @@ class AboutScreen extends StatelessWidget {
             // 应用图标和名称
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: theme.primaryColor.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.lock_outline,
-                size: 56,
-                color: theme.primaryColor,
-              ),
+              child: Image.asset('assets/icon.png', width: 100, height: 100),
             ),
             const SizedBox(height: 16),
             const Text(
               'AuthX TOTP',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 4),
             const Text(
               '版本 1.0.0',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
             const SizedBox(height: 32),
-            
+
             // 应用介绍
             _buildSection(
               context,
@@ -57,15 +40,12 @@ class AboutScreen extends StatelessWidget {
                 '支持基于时间的一次性密码（TOTP）标准 RFC 6238，'
                 '帮助您安全地保护您的在线账户。所有数据都安全地存储在您的设备上，'
                 '不会上传到任何服务器。',
-                style: TextStyle(
-                  fontSize: 14,
-                  height: 1.5,
-                ),
+                style: TextStyle(fontSize: 14, height: 1.5),
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // 功能特性
             _buildSection(
               context,
@@ -111,9 +91,9 @@ class AboutScreen extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // 技术规格
             _buildSection(
               context,
@@ -143,9 +123,9 @@ class AboutScreen extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // 开源信息
             _buildSection(
               context,
@@ -153,22 +133,16 @@ class AboutScreen extends StatelessWidget {
               child: const Text(
                 '本应用是开源软件，使用 MIT 许可证发布。\n'
                 '源代码可在 GitHub 上获取。',
-                style: TextStyle(
-                  fontSize: 14,
-                  height: 1.5,
-                ),
+                style: TextStyle(fontSize: 14, height: 1.5),
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             Center(
               child: Text(
                 '© ${DateTime.now().year} AuthX TOTP',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ),
           ],
@@ -183,16 +157,13 @@ class AboutScreen extends StatelessWidget {
     required Widget child,
   }) {
     final theme = Theme.of(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         Container(
@@ -223,11 +194,7 @@ class AboutScreen extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon, 
-            color: Theme.of(context).primaryColor,
-            size: 18,
-          ),
+          Icon(icon, color: Theme.of(context).primaryColor, size: 18),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -256,7 +223,7 @@ class AboutScreen extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildSpecItem(
     BuildContext context, {
     required String title,
@@ -266,20 +233,10 @@ class AboutScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: 14,
-              ),
-            ),
-          ),
+          Expanded(child: Text(title, style: const TextStyle(fontSize: 14))),
           Text(
             description,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Colors.grey,
-            ),
+            style: const TextStyle(fontSize: 13, color: Colors.grey),
           ),
         ],
       ),
