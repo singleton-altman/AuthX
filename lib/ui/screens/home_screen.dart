@@ -35,72 +35,44 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    _timerService.stopTimer();
     _timerService.dispose();
     super.dispose();
   }
 
-  void _onManualAdd() async {
-    final result = await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const AddEntryScreen(),
-      ),
-    );
-    
-    if (result == true) {
-      Provider.of<TotpProvider>(context, listen: false).loadEntries();
-    }
-  }
-
-  void _onScanQR() async {
-    final result = await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const QRScannerScreen(),
-      ),
-    );
-    
-    if (result != null && mounted) {
-
-    }
-  }
-
-  void _onImport() async {
-    final result = await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const SimpleImportScreen(),
-      ),
-    );
-    
-    if (result == true) {
-      Provider.of<TotpProvider>(context, listen: false).loadEntries();
-    }
-  }
-
-  void _onExport() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('导出功能将在后续版本中实现')),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    
     return Scaffold(
-      extendBody: true,
       appBar: AppBar(
-        title: const Text(
-          'AuthX TOTP',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
-        ),
+        title: const Text('AuthX TOTP'),
         centerTitle: true,
         actions: [
+          // 添加三合一主题模式按钮
+          Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: _getThemeModeIcon(themeProvider.themeMode),
+              color: Theme.of(context).primaryColor,
+              onPressed: () => _switchThemeMode(themeProvider),
+            ),
+          ),
+          // 恢复设置按钮
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
-            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const SettingsScreen(),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -120,7 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 stream: _timerService.secondsStream,
                 initialData: DateTime.now().second,
                 builder: (context, snapshot) {
-                  final currentSecond = snapshot.data!;
+                  final currentSecond = snapshot.data ?? DateTime.now().second;
                   final remainingTime = 30 - (currentSecond % 30);
 
                   return RefreshIndicator(
@@ -140,13 +112,68 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           // 将ExpandedFab放在Stack中以确保全屏覆盖
           ExpandedFab(
-            onManualAdd: _onManualAdd,
-            onScanQR: _onScanQR,
-            onImport: _onImport,
-            onExport: _onExport,
+            onManualAdd: () => _onManualAdd(context),
+            onScanQR: () => _onScanQR(context),
+            onImport: () => _onImport(context),
+            onExport: () => _onExport(context),
           ),
         ],
       ),
+    );
+  }
+
+  /// 获取当前主题模式对应的图标
+  Icon _getThemeModeIcon(ThemeMode themeMode) {
+    switch (themeMode) {
+      case ThemeMode.light:
+        return const Icon(Icons.wb_sunny);
+      case ThemeMode.dark:
+        return const Icon(Icons.nightlight);
+      case ThemeMode.system:
+        return const Icon(Icons.sync);
+    }
+  }
+
+  /// 切换主题模式
+  void _switchThemeMode(ThemeProvider themeProvider) {
+    switch (themeProvider.themeMode) {
+      case ThemeMode.light:
+        themeProvider.setThemeMode(ThemeMode.dark);
+        break;
+      case ThemeMode.dark:
+        themeProvider.setThemeMode(ThemeMode.system);
+        break;
+      case ThemeMode.system:
+        themeProvider.setThemeMode(ThemeMode.light);
+        break;
+    }
+  }
+
+  // 添加缺失的函数定义
+  void _onManualAdd(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AddEntryScreen()),
+    );
+  }
+
+  void _onScanQR(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const QRScannerScreen()),
+    );
+  }
+
+  void _onImport(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const SimpleImportScreen()),
+    );
+  }
+
+  void _onExport(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('导出功能将在后续版本中实现')),
     );
   }
 
