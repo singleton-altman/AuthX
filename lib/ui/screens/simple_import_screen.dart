@@ -166,13 +166,28 @@ class _SimpleImportScreenState extends State<SimpleImportScreen> {
             padding: const EdgeInsets.all(8.0),
             child: ElevatedButton(
               onPressed: _isProcessing ? null : _submitForm,
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).primaryColor,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
               child: _isProcessing
                   ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(),
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
                     )
-                  : const Text('导入'),
+                  : Transform.rotate(
+                      angle: -1.5708, // -90度 (逆时针)
+                      child: const Icon(
+                        Icons.download,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
             ),
           ),
         ],

@@ -27,40 +27,43 @@ class StorageService {
           .map((entry) => TotpEntry.fromJson(Map<String, dynamic>.from(entry)))
           .toList();
     } catch (e) {
-      // 如果解析失败，返回空列表
       return [];
     }
   }
 
-  /// 添加新的TOTP条目
-  Future<void> addEntry(TotpEntry entry) async {
-    final List<TotpEntry> entries = await getEntries();
-    entries.add(entry);
-    await _saveEntries(entries);
-  }
-
-  /// 更新TOTP条目
-  Future<void> updateEntry(TotpEntry entry) async {
-    final List<TotpEntry> entries = await getEntries();
-    final int index = entries.indexWhere((e) => e.id == entry.id);
-    if (index != -1) {
-      entries[index] = entry;
-      await _saveEntries(entries);
+  /// 保存所有TOTP条目
+  Future<void> saveEntries(List<TotpEntry> entries) async {
+    try {
+      final String entriesJson = json.encode(
+        entries.map((entry) => entry.toJson()).toList(),
+      );
+      await _storage.write(key: _entriesKey, value: entriesJson);
+    } catch (e) {
+      // 忽略错误
     }
   }
 
-  /// 删除TOTP条目
-  Future<void> deleteEntry(String id) async {
-    final List<TotpEntry> entries = await getEntries();
-    entries.removeWhere((entry) => entry.id == id);
-    await _saveEntries(entries);
+  /// 添加单个条目
+  Future<void> addEntry(TotpEntry entry) async {
+    final entries = await getEntries();
+    entries.add(entry);
+    await saveEntries(entries);
   }
 
-  /// 保存所有条目
-  Future<void> _saveEntries(List<TotpEntry> entries) async {
-    final String entriesJson = json.encode(
-      entries.map((entry) => entry.toJson()).toList(),
-    );
-    await _storage.write(key: _entriesKey, value: entriesJson);
+  /// 删除单个条目
+  Future<void> deleteEntry(String id) async {
+    final entries = await getEntries();
+    entries.removeWhere((entry) => entry.id == id);
+    await saveEntries(entries);
+  }
+
+  /// 更新单个条目
+  Future<void> updateEntry(TotpEntry updatedEntry) async {
+    final entries = await getEntries();
+    final index = entries.indexWhere((entry) => entry.id == updatedEntry.id);
+    if (index != -1) {
+      entries[index] = updatedEntry;
+      await saveEntries(entries);
+    }
   }
 }

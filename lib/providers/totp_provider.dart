@@ -30,6 +30,22 @@ class TotpProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// 添加多个条目
+  Future<void> addEntries(List<TotpEntry> newEntries) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      _entries.addAll(newEntries);
+      await _storageService.saveEntries(_entries);
+    } catch (e) {
+      // 忽略错误
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
   /// 添加新条目
   Future<void> addEntry(TotpEntry entry) async {
     try {

@@ -11,6 +11,7 @@ import 'package:authx/ui/screens/simple_import_screen.dart';
 import 'package:authx/ui/screens/qr_scanner_screen.dart';
 import 'package:authx/ui/screens/settings_screen.dart';
 import 'package:authx/ui/screens/totp_display_screen.dart';
+import 'package:authx/ui/screens/export_screen.dart';
 import 'package:authx/ui/widgets/expanded_fab.dart';
 import 'package:authx/ui/widgets/circular_progress_avatar.dart';
 // 添加必要的导入
@@ -172,8 +173,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onExport(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('导出功能将在后续版本中实现')),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ExportScreen()),
     );
   }
 

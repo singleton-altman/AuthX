@@ -19,7 +19,8 @@ class ExpandedFab extends StatefulWidget {
   State<ExpandedFab> createState() => _ExpandedFabState();
 }
 
-class _ExpandedFabState extends State<ExpandedFab> with SingleTickerProviderStateMixin {
+class _ExpandedFabState extends State<ExpandedFab>
+    with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -27,19 +28,15 @@ class _ExpandedFabState extends State<ExpandedFab> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    
+
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-    
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutBack,
-    ));
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
+    );
   }
 
   @override
@@ -104,10 +101,10 @@ class _ExpandedFabState extends State<ExpandedFab> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
-    
+
     // 获取状态栏高度
     final statusBarHeight = MediaQuery.of(context).padding.top;
-    
+
     return Stack(
       children: [
         // 遮罩层 - 使用MediaQuery获取完整屏幕尺寸
@@ -131,14 +128,16 @@ class _ExpandedFabState extends State<ExpandedFab> with SingleTickerProviderStat
                       // 设置容器高度为整个屏幕高度
                       height: MediaQuery.of(context).size.height,
                       // 设置容器颜色并应用透明度动画
-                      color: Colors.black.withOpacity(0.3 * _fadeAnimation.value),
+                      color: Colors.black.withOpacity(
+                        0.3 * _fadeAnimation.value,
+                      ),
                     ),
                   );
                 },
               ),
             ),
           ),
-        
+
         // 主按钮和子按钮
         Positioned(
           right: 16,
@@ -152,19 +151,22 @@ class _ExpandedFabState extends State<ExpandedFab> with SingleTickerProviderStat
                 FadeTransition(
                   opacity: _fadeAnimation,
                   child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 0.5),
-                      end: Offset.zero,
-                    ).animate(CurvedAnimation(
-                      parent: _animationController,
-                      curve: Curves.easeOutBack,
-                    )),
+                    position:
+                        Tween<Offset>(
+                          begin: const Offset(0, 0.5),
+                          end: Offset.zero,
+                        ).animate(
+                          CurvedAnimation(
+                            parent: _animationController,
+                            curve: Curves.easeOutBack,
+                          ),
+                        ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.end,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         _buildSubButton(
-                          icon: Icons.upload_outlined,
+                          icon: Icons.file_upload_outlined,
                           label: '导出',
                           onTap: () {
                             _toggleExpanded();
@@ -172,7 +174,7 @@ class _ExpandedFabState extends State<ExpandedFab> with SingleTickerProviderStat
                           },
                         ),
                         const SizedBox(height: 16),
-                        
+
                         _buildSubButton(
                           icon: Icons.download_outlined,
                           label: '导入',
@@ -182,7 +184,7 @@ class _ExpandedFabState extends State<ExpandedFab> with SingleTickerProviderStat
                           },
                         ),
                         const SizedBox(height: 16),
-                        
+
                         _buildSubButton(
                           icon: Icons.qr_code_scanner,
                           label: '扫描二维码',
@@ -192,7 +194,7 @@ class _ExpandedFabState extends State<ExpandedFab> with SingleTickerProviderStat
                           },
                         ),
                         const SizedBox(height: 16),
-                        
+
                         _buildSubButton(
                           icon: Icons.edit_outlined,
                           label: '手动添加',
@@ -206,7 +208,7 @@ class _ExpandedFabState extends State<ExpandedFab> with SingleTickerProviderStat
                     ),
                   ),
                 ),
-              
+
               // 主按钮（始终显示）
               FloatingActionButton(
                 backgroundColor: Theme.of(context).primaryColor,
