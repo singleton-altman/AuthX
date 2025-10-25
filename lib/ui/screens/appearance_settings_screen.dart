@@ -5,11 +5,21 @@ import 'package:authx/models/totp_entry.dart';
 import 'package:authx/services/totp_service.dart';
 import 'package:authx/ui/widgets/circular_progress_avatar.dart';
 import 'package:authx/ui/widgets/color_picker.dart';
-import 'dart:convert';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
 
 class AppearanceSettingsScreen extends StatelessWidget {
+  const AppearanceSettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('外观设置')),
+      body: const _AppearanceSettingsBody(),
+    );
+  }
+}
+
+class _AppearanceSettingsBody extends StatelessWidget {
+  const _AppearanceSettingsBody();
 
   @override
   Widget build(BuildContext context) {
@@ -17,188 +27,280 @@ class AppearanceSettingsScreen extends StatelessWidget {
     final textSize = themeProvider.codeFontSize;
     final avatarSize = themeProvider.avatarSize;
 
-    return Scaffold(
-      appBar: AppBar(title: Text('外观设置')),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 主题设置
-              _buildThemeSettings(context),
-
-              // 显示设置（包含预览效果与大小调节）
-              SizedBox(height: 24),
-              Text('显示设置', style: Theme.of(context).textTheme.titleMedium),
-
-              // 主题颜色
-              SizedBox(height: 16),
-              Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.3)),
-                ),
-                padding: EdgeInsets.all(16),
-                margin: EdgeInsets.only(bottom: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('主题颜色', style: Theme.of(context).textTheme.titleMedium),
-                    SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ColorPicker(
-                            selectedColor: themeProvider.primaryColor,
-                            onColorChanged: (color) {
-                              themeProvider.setPrimaryColor(color);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // 预览效果 + 头像大小调节
-              Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.3)),
-                ),
-                padding: EdgeInsets.all(16),
-                margin: EdgeInsets.only(bottom: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 预览效果
-                    _buildPreviewWidget(context, avatarSize, textSize),
-
-                    // 头像大小滑块
-                    SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Icon(Icons.person, size: 20),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('小', style: Theme.of(context).textTheme.bodyMedium),
-                              Text('当前大小: ${avatarSize.toInt()}', style: Theme.of(context).textTheme.bodyMedium),
-                              Text('大', style: Theme.of(context).textTheme.bodyMedium),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 8),
-                    _buildSlider(avatarSize, (value) {
-                      themeProvider.setAvatarSize(value);
-                    }, 10, 40),
-
-                    // 文字大小滑块
-                    SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Icon(Icons.text_fields, size: 20),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('小', style: Theme.of(context).textTheme.bodyMedium),
-                              Text('当前大小: ${textSize.toInt()}', style: Theme.of(context).textTheme.bodyMedium),
-                              Text('大', style: Theme.of(context).textTheme.bodyMedium),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 8),
-                    _buildSlider(textSize, (value) {
-                      themeProvider.setCodeFontSize(value);
-                    }, 12, 32),
-                  ],
-                ),
-              ),
-            ],
-          ),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 主题设置
+            const _ThemeModeSettings(),
+            const SizedBox(height: 24),
+            
+            // 主题颜色选择器
+            const _ThemeColorSettings(),
+            const SizedBox(height: 24),
+            
+            // 显示设置
+            Text('显示设置', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 16),
+            _DisplaySettings(
+              avatarSize: avatarSize,
+              textSize: textSize,
+            ),
+          ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildThemeSettings(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+class _ThemeModeSettings extends StatelessWidget {
+  const _ThemeModeSettings();
+
+  @override
+  Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeMode = themeProvider.themeMode;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('主题设置', style: Theme.of(context).textTheme.titleMedium),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            GestureDetector(
+            _ThemeModeButton(
+              icon: Icons.wb_sunny,
+              label: '亮色',
+              isSelected: themeMode == ThemeMode.light,
               onTap: () => themeProvider.setThemeMode(ThemeMode.light),
-              child: Column(
-                children: [
-                  Icon(Icons.wb_sunny, color: themeProvider.themeMode == ThemeMode.light ? Colors.blue : Colors.grey),
-                  Text('亮色'),
-                ],
-              ),
             ),
-            GestureDetector(
+            _ThemeModeButton(
+              icon: Icons.nightlight,
+              label: '暗色',
+              isSelected: themeMode == ThemeMode.dark,
               onTap: () => themeProvider.setThemeMode(ThemeMode.dark),
-              child: Column(
-                children: [
-                  Icon(Icons.nightlight, color: themeProvider.themeMode == ThemeMode.dark ? Colors.blue : Colors.grey),
-                  Text('暗色'),
-                ],
-              ),
             ),
-            GestureDetector(
+            _ThemeModeButton(
+              icon: Icons.sync,
+              label: '系统',
+              isSelected: themeMode == ThemeMode.system,
               onTap: () => themeProvider.setThemeMode(ThemeMode.system),
-              child: Column(
-                children: [
-                  Icon(Icons.sync, color: themeProvider.themeMode == ThemeMode.system ? Colors.blue : Colors.grey),
-                  Text('系统'),
-                ],
-              ),
             ),
           ],
         ),
-        SizedBox(height: 16),
-
       ],
     );
   }
+}
 
-  Widget _buildColorPicker(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+class _ThemeModeButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('主题颜色', style: Theme.of(context).textTheme.titleMedium),
-        SizedBox(height: 16),
-        ColorPicker(
-          selectedColor: themeProvider.primaryColor,
-          onColorChanged: (color) {
-            themeProvider.setPrimaryColor(color);
-          },
-        ),
-      ],
+  const _ThemeModeButton({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isSelected 
+        ? Theme.of(context).primaryColor 
+        : Theme.of(context).disabledColor;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Icon(icon, color: color),
+          Text(label, style: TextStyle(color: color)),
+        ],
+      ),
     );
   }
+}
 
-  Widget _buildPreviewWidget(BuildContext context, double avatarSize, double textSize) {
+class _ThemeColorSettings extends StatelessWidget {
+  const _ThemeColorSettings();
+
+  @override
+  Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+
+    // 添加边界检查，确保 selectedColor 在有效范围内
+    int getValidColorIndex(Color color) {
+      // 根据颜色值获取对应的索引
+      // 这里假设颜色索引与颜色值有对应关系
+      // 实际实现可能需要根据具体颜色映射关系调整
+      final colorValue = color.value;
+      
+      // 简单的映射逻辑：将颜色值映射到 2-7 范围内
+      if (colorValue < 0x000000) return 2;
+      if (colorValue > 0xFFFFFF) return 7;
+      
+      // 使用颜色值的高位部分进行映射
+      final index = ((colorValue >> 16) & 0xFF) % 6 + 2;
+      return index;
+    }
+
+    // 获取有效的颜色索引
+    final validColorIndex = getValidColorIndex(themeProvider.primaryColor);
+
+    // 根据索引获取对应的颜色值
+    Color getSelectedColor(int index) {
+      // 定义颜色映射表
+      final colors = [
+        Colors.blue,
+        Colors.green,
+        Colors.red,
+        Colors.yellow,
+        Colors.purple,
+        Colors.orange,
+        Colors.cyan,
+      ];
+      
+      return colors[index - 2]; // 索引从2开始，所以减去2
+    }
+
+    final selectedColor = getSelectedColor(validColorIndex);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.palette, size: 20, color: Colors.amber),
+              const SizedBox(width: 12),
+              Text('主题颜色', style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              )),
+              const Spacer(),
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: selectedColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: theme.dividerColor,
+                    width: 1,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ColorPicker(
+            selectedColor: selectedColor, // 使用经过验证的颜色值
+            onColorChanged: (color) {
+              themeProvider.setPrimaryColor(color);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DisplaySettings extends StatelessWidget {
+  final double avatarSize;
+  final double textSize;
+
+  const _DisplaySettings({
+    required this.avatarSize,
+    required this.textSize,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('显示预览', style: theme.textTheme.titleMedium?.copyWith(
+            color: theme.primaryColor,
+            fontWeight: FontWeight.w600,
+          )),
+          const SizedBox(height: 12),
+          _PreviewWidget(avatarSize: avatarSize, textSize: textSize),
+          const SizedBox(height: 24),
+          
+          _SizeControlSection(
+            icon: Icons.person,
+            title: '头像大小',
+            currentValue: avatarSize.toInt(),
+            min: 10,
+            max: 40,
+            onChanged: themeProvider.setAvatarSize,
+          ),
+          const SizedBox(height: 24),
+          
+          _SizeControlSection(
+            icon: Icons.text_fields,
+            title: '文字大小',
+            currentValue: textSize.toInt(),
+            min: 12,
+            max: 32,
+            onChanged: themeProvider.setCodeFontSize,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PreviewWidget extends StatelessWidget {
+  final double avatarSize;
+  final double textSize;
+
+  const _PreviewWidget({
+    required this.avatarSize,
+    required this.textSize,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final theme = Theme.of(context);
+    
     final entry = TotpEntry(
       id: 'preview',
       name: 'Google',
@@ -212,51 +314,147 @@ class AppearanceSettingsScreen extends StatelessWidget {
     final remainingSeconds = TotpService.getRemainingTime(entry);
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.3)),
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
         children: [
-          CircularProgressAvatar(
-            issuer: 'G',
-            size: avatarSize / 2,
-            remainingTime: remainingSeconds,
-            period: 30,
-            progressColor: themeProvider.primaryColor,
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Google', style: TextStyle(fontSize: textSize, fontWeight: FontWeight.w500)),
-                Text('example@gmail.com', style: TextStyle(fontSize: textSize - 2, color: Theme.of(context).hintColor)),
-              ],
-            ),
-          ),
-          SizedBox(width: 12),
-          Column(
+          Row(
             children: [
-              Text(code, style: TextStyle(fontSize: textSize, fontWeight: FontWeight.bold)),
-              Text('${remainingSeconds}s', style: TextStyle(fontSize: textSize - 2, color: Theme.of(context).hintColor)),
+              CircularProgressAvatar(
+                issuer: 'G',
+                size: avatarSize,
+                remainingTime: remainingSeconds,
+                period: 30,
+                progressColor: themeProvider.primaryColor,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Google', 
+                      style: TextStyle(
+                        fontSize: textSize, 
+                        fontWeight: FontWeight.w600,
+                        color: theme.textTheme.titleMedium?.color,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'example@gmail.com', 
+                      style: TextStyle(
+                        fontSize: textSize - 2, 
+                        color: theme.hintColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    code, 
+                    style: TextStyle(
+                      fontSize: textSize + 4, 
+                      fontWeight: FontWeight.bold,
+                      color: theme.primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${remainingSeconds}s', 
+                    style: TextStyle(
+                      fontSize: textSize - 2, 
+                      color: theme.hintColor,
+                    ),
+                  ),
+                ],
+              ),
             ],
+          ),
+          const SizedBox(height: 12),
+          LinearProgressIndicator(
+            value: remainingSeconds / 30,
+            backgroundColor: theme.dividerColor,
+            valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
+            minHeight: 2,
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildSlider(double value, Function(double) onChanged, double min, double max) {
-    return Slider(
-      value: value,
-      onChanged: onChanged,
-      min: min,
-      max: max,
-      divisions: (max - min).toInt(),
-      label: value.toInt().toString(),
+class _SizeControlSection extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final int currentValue;
+  final int min;
+  final int max;
+  final Function(double) onChanged;
+
+  const _SizeControlSection({
+    required this.icon,
+    required this.title,
+    required this.currentValue,
+    required this.min,
+    required this.max,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 20, color: theme.primaryColor),
+            const SizedBox(width: 12),
+            Text(title, style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            )),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: theme.primaryColor,
+            inactiveTrackColor: theme.dividerColor,
+            thumbColor: theme.primaryColor,
+            overlayColor: theme.primaryColor.withOpacity(0.2),
+            valueIndicatorColor: theme.primaryColor,
+            trackHeight: 6,
+            valueIndicatorTextStyle: theme.textTheme.bodySmall?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          child: Slider(
+            value: currentValue.toDouble(),
+            min: min.toDouble(),
+            max: max.toDouble(),
+            divisions: max - min,
+            label: '$currentValue px',
+            onChanged: onChanged,
+          ),
+        ),
+      ],
     );
   }
 }
