@@ -4,6 +4,8 @@ import 'package:authx/providers/theme_provider.dart';
 import 'package:authx/ui/screens/about_screen.dart';
 import 'package:authx/ui/screens/debug_screen.dart';
 import 'package:authx/ui/screens/appearance_settings_screen.dart';
+import 'package:authx/ui/screens/security_settings_screen.dart';
+import 'package:authx/ui/screens/backup_restore_screen.dart';
 import 'package:authx/utils/app_theme.dart'; // 添加对 app_theme.dart 的导入
 
 class SettingsScreen extends StatelessWidget {
@@ -20,42 +22,37 @@ class SettingsScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
       ),
-      body: SingleChildScrollView(
+      body: ListView(
         physics: const BouncingScrollPhysics(),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 外观设置
-              _buildSettingsSection(
-                context,
-                title: '外观设置',
-                icon: Icons.palette_outlined,
-                children: _buildAppearanceSettings(context),
-              ),
-              const SizedBox(height: 20),
-              
-              // 应用设置
-              _buildSettingsSection(
-                context,
-                title: '应用设置',
-                icon: Icons.settings_outlined,
-                children: _buildAppSettings(context),
-              ),
-              const SizedBox(height: 20),
-              
-              // 其他
-              _buildSettingsSection(
-                context,
-                title: '其他',
-                icon: Icons.more_horiz_outlined,
-                children: _buildOtherSettings(context),
-              ),
-              const SizedBox(height: 20),
-            ],
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        children: [
+          // 外观设置
+          _buildSettingsSection(
+            context,
+            title: '外观设置',
+            icon: Icons.palette_outlined,
+            children: _buildAppearanceSettings(context),
           ),
-        ),
+          const SizedBox(height: 16),
+          
+          // 应用设置
+          _buildSettingsSection(
+            context,
+            title: '应用设置',
+            icon: Icons.settings_outlined,
+            children: _buildAppSettings(context),
+          ),
+          const SizedBox(height: 16),
+          
+          // 其他
+          _buildSettingsSection(
+            context,
+            title: '其他',
+            icon: Icons.more_horiz_outlined,
+            children: _buildOtherSettings(context),
+          ),
+          const SizedBox(height: 16),
+        ],
       ),
     );
   }
@@ -67,18 +64,13 @@ class SettingsScreen extends StatelessWidget {
     required List<Widget> children,
   }) {
     return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).shadowColor.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: Theme.of(context).dividerColor.withOpacity(0.1),
+          width: 1,
         ),
       ),
       child: Column(
@@ -86,20 +78,13 @@ class SettingsScreen extends StatelessWidget {
         children: [
           // 标题栏
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 20,
-                    color: Theme.of(context).primaryColor,
-                  ),
+                Icon(
+                  icon,
+                  size: 20,
+                  color: Theme.of(context).primaryColor,
                 ),
                 const SizedBox(width: 12),
                 Text(
@@ -131,10 +116,10 @@ class SettingsScreen extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.vertical(
-          bottom: isLast ? const Radius.circular(16) : Radius.zero,
+          bottom: isLast ? const Radius.circular(12) : Radius.zero,
         ),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             border: !isLast
                 ? Border(
@@ -147,19 +132,12 @@ class SettingsScreen extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: Theme.of(context).primaryColor,
-                ),
+              Icon(
+                icon,
+                size: 20,
+                color: Theme.of(context).primaryColor,
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,21 +148,22 @@ class SettingsScreen extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+                        color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
+                        fontSize: 13,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               Icon(
                 Icons.arrow_forward_ios_rounded,
-                size: 16,
-                color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.5),
+                size: 14,
+                color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.4),
               ),
             ],
           ),
@@ -221,25 +200,21 @@ class SettingsScreen extends StatelessWidget {
         context,
         icon: Icons.security_outlined,
         title: '安全设置',
-        subtitle: '密码、生物识别等',
-        onTap: () {
-          // 导航到安全设置
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('此功能将在后续版本中实现')),
-          );
-        },
+        subtitle: '应用锁定、数据保护等',
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const SecuritySettingsScreen()),
+        ),
       ),
       _buildSettingsOption(
         context,
         icon: Icons.backup_outlined,
         title: '备份与恢复',
-        subtitle: '导出或导入数据',
-        onTap: () {
-          // 导航到备份页面
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('此功能将在后续版本中实现')),
-          );
-        },
+        subtitle: '自动备份、手动备份和恢复',
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const BackupRestoreScreen()),
+        ),
         isLast: true,
       ),
     ];

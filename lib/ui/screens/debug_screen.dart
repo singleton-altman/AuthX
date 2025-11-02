@@ -14,7 +14,6 @@ class DebugScreen extends StatefulWidget {
 }
 
 class _DebugScreenState extends State<DebugScreen> {
-  bool _rfcTestPassed = false;
   String _totpCode = '';
   int _remainingTime = 0;
   String _error = '';
@@ -27,79 +26,6 @@ class _DebugScreenState extends State<DebugScreen> {
   final TextEditingController _digitsController = TextEditingController(text: '6');
   final TextEditingController _periodController = TextEditingController(text: '30');
   final TextEditingController _algorithmController = TextEditingController(text: 'SHA1');
-
-  @override
-  void initState() {
-    super.initState();
-    _rfcTestPassed = _runRfcTestCases();
-  }
-
-  bool _runRfcTestCases() {
-    try {
-      final testCases = [
-        {
-          'secret': 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ',
-          'counter': 1,
-          'algorithm': 'SHA1',
-          'expected': '94287082'
-        },
-        {
-          'secret': 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ',
-          'counter': 1,
-          'algorithm': 'SHA256',
-          'expected': '46119246'
-        },
-        {
-          'secret': 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ',
-          'counter': 1,
-          'algorithm': 'SHA512',
-          'expected': '90693936'
-        }
-      ];
-
-      for (final test in testCases) {
-        // 使用固定时间戳59秒来测试RFC用例
-        final entry = TotpEntry(
-          id: 'test',
-          name: 'Test',
-          issuer: 'Test',
-          secret: test['secret'] as String,
-          algorithm: test['algorithm'] as String,
-          digits: 8,
-          period: 30,
-        );
-        
-        // 模拟RFC测试时间点(59秒)
-        final testTime = DateTime.fromMillisecondsSinceEpoch(1000 * 59);
-        final testCode = TotpService.generateTotpAtTime(entry, testTime);
-        if (testCode != test['expected']) {
-          return false;
-        }
-      }
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  void _runRfcTests() {
-    setState(() {
-      _rfcTestPassed = _runRfcTestCases();
-    });
-    
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            _rfcTestPassed 
-              ? 'RFC测试通过!' 
-              : 'RFC测试失败，请检查实现',
-          ),
-          backgroundColor: _rfcTestPassed ? Colors.green : Colors.red,
-        ),
-      );
-    }
-  }
 
   void _generateTotp() {
     setState(() {
@@ -167,39 +93,6 @@ class _DebugScreenState extends State<DebugScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 测试状态显示
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: _rfcTestPassed ? Colors.green[100] : Colors.red[100],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    _rfcTestPassed ? Icons.check_circle : Icons.error,
-                    color: _rfcTestPassed ? Colors.green : Colors.red,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _rfcTestPassed 
-                      ? 'RFC测试已通过' 
-                      : 'RFC测试未通过',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: _rfcTestPassed ? Colors.green : Colors.red,
-                    ),
-                  ),
-                  const Spacer(),
-                  ElevatedButton(
-                    onPressed: _runRfcTests,
-                    child: const Text('重新测试'),
-                  ),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 24),
             
             // TOTP生成器
             Card(

@@ -287,12 +287,19 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        '${remainingTime}s',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: remainingTime <= 5 ? Colors.red : theme.primaryColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: (remainingTime <= 5 ? Colors.red : theme.primaryColor).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${remainingTime}s',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: remainingTime <= 5 ? Colors.red : theme.primaryColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ],
