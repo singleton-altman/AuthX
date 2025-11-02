@@ -9,6 +9,7 @@ class TotpParseResult {
   final String algorithm;
   final int period;
   final String icon; // 添加图标字段
+  final String tag; // 添加标签字段
 
   TotpParseResult({
     required this.name,
@@ -18,6 +19,7 @@ class TotpParseResult {
     required this.algorithm,
     required this.period,
     required this.icon, // 初始化图标字段
+    required this.tag, // 初始化标签字段
   });
 }
 
@@ -66,6 +68,10 @@ class TotpParser {
     final String icon = queryParameters.containsKey('icon') 
         ? queryParameters['icon']! 
         : ''; // 解析图标参数
+        
+    final String tag = queryParameters.containsKey('tag') 
+        ? queryParameters['tag']! 
+        : ''; // 解析标签参数
 
     // 验证参数
     if (digits != 6 && digits != 8) {
@@ -88,6 +94,7 @@ class TotpParser {
       algorithm: algorithm,
       period: period,
       icon: icon, // 返回图标字段
+      tag: tag, // 返回标签字段
     );
   }
 
@@ -103,6 +110,7 @@ class TotpParser {
         'algorithm': entry.algorithm,
         'period': entry.period.toString(),
         if (entry.icon.isNotEmpty) 'icon': entry.icon, // 添加图标参数
+        if (entry.tag.isNotEmpty) 'tag': entry.tag, // 添加标签参数
       },
     );
     

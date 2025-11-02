@@ -22,6 +22,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
   final _issuerController = TextEditingController();
   final _secretController = TextEditingController();
   final _iconController = TextEditingController(); // 图标输入控制器
+  final _tagController = TextEditingController(); // 标签输入控制器
   
   bool _isManualInput = true;
   String? _scanResult;
@@ -32,6 +33,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     _issuerController.dispose();
     _secretController.dispose();
     _iconController.dispose(); // 释放图标控制器
+    _tagController.dispose(); // 释放标签控制器
     super.dispose();
   }
 
@@ -42,6 +44,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       final String issuer = _issuerController.text.trim();
       final String secret = _secretController.text.trim().replaceAll(' ', '');
       final String icon = _iconController.text.trim(); // 获取图标链接
+      final String tag = _tagController.text.trim(); // 获取标签
       
       final TotpEntry entry = TotpEntry(
         id: id,
@@ -49,6 +52,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
         issuer: issuer,
         secret: secret,
         icon: icon, // 添加图标字段
+        tag: tag, // 添加标签字段
       );
       
       final TotpProvider provider = Provider.of<TotpProvider>(context, listen: false);
@@ -169,6 +173,20 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                 decoration: InputDecoration(
                   labelText: '图标',
                   hintText: '支持图床链接或base64编码图片',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // 标签输入框
+              TextFormField(
+                controller: _tagController,
+                decoration: InputDecoration(
+                  labelText: '标签',
+                  hintText: '例如：工作、个人、重要',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                   ),

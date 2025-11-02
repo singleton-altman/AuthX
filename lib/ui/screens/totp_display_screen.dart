@@ -390,6 +390,7 @@ class _EditEntryScreenState extends State<EditEntryScreen> {
   late final TextEditingController _issuerController;
   late final TextEditingController _secretController;
   late final TextEditingController _iconController;
+  late final TextEditingController _tagController;
 
   @override
   void initState() {
@@ -398,6 +399,7 @@ class _EditEntryScreenState extends State<EditEntryScreen> {
     _issuerController = TextEditingController(text: widget.entry.issuer);
     _secretController = TextEditingController(text: widget.entry.secret);
     _iconController = TextEditingController(text: widget.entry.icon);
+    _tagController = TextEditingController(text: widget.entry.tag);
   }
 
   @override
@@ -406,6 +408,7 @@ class _EditEntryScreenState extends State<EditEntryScreen> {
     _issuerController.dispose();
     _secretController.dispose();
     _iconController.dispose();
+    _tagController.dispose();
     super.dispose();
   }
 
@@ -415,6 +418,7 @@ class _EditEntryScreenState extends State<EditEntryScreen> {
       final String issuer = _issuerController.text.trim();
       final String secret = _secretController.text.trim().replaceAll(' ', '');
       final String icon = _iconController.text.trim();
+      final String tag = _tagController.text.trim();
 
       final TotpEntry updatedEntry = TotpEntry(
         id: widget.entry.id,
@@ -425,6 +429,7 @@ class _EditEntryScreenState extends State<EditEntryScreen> {
         algorithm: widget.entry.algorithm,
         period: widget.entry.period,
         icon: icon,
+        tag: tag,
       );
 
       final TotpProvider provider = Provider.of<TotpProvider>(context, listen: false);
@@ -466,6 +471,20 @@ class _EditEntryScreenState extends State<EditEntryScreen> {
                 decoration: InputDecoration(
                   labelText: '图标',
                   hintText: '支持图床链接或base64编码图片',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // 标签输入框
+              TextFormField(
+                controller: _tagController,
+                decoration: InputDecoration(
+                  labelText: '标签',
+                  hintText: '例如：工作、个人、重要',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                   ),
