@@ -4,6 +4,8 @@ import 'package:authx/providers/theme_provider.dart';
 import 'package:authx/ui/screens/about_screen.dart';
 import 'package:authx/ui/screens/debug_screen.dart';
 import 'package:authx/ui/screens/appearance_settings_screen.dart';
+import 'package:authx/ui/screens/security_settings_screen.dart';
+import 'package:authx/ui/screens/backup_restore_screen.dart';
 import 'package:authx/utils/app_theme.dart'; // 添加对 app_theme.dart 的导入
 
 class SettingsScreen extends StatelessWidget {
@@ -12,45 +14,90 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('设置'),
         centerTitle: true,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
       ),
       body: ListView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
           // 外观设置
-          _buildSectionHeader(context, '外观设置', Icons.color_lens),
-          _buildAppearanceSettings(context),
+          _buildSettingsSection(
+            context,
+            title: '外观设置',
+            icon: Icons.palette_outlined,
+            children: _buildAppearanceSettings(context),
+          ),
+          const SizedBox(height: 16),
           
           // 应用设置
-          _buildSectionHeader(context, '应用设置', Icons.settings),
-          _buildAppSettings(context),
+          _buildSettingsSection(
+            context,
+            title: '应用设置',
+            icon: Icons.settings_outlined,
+            children: _buildAppSettings(context),
+          ),
+          const SizedBox(height: 16),
           
           // 其他
-          _buildSectionHeader(context, '其他', Icons.more_horiz),
-          _buildOtherSettings(context),
+          _buildSettingsSection(
+            context,
+            title: '其他',
+            icon: Icons.more_horiz_outlined,
+            children: _buildOtherSettings(context),
+          ),
+          const SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-      child: Row(
+  Widget _buildSettingsSection(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            color: Theme.of(context).primaryColor,
-          ),
-          const SizedBox(width: 12),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+          // 标题栏
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 20,
+                  color: Theme.of(context).primaryColor,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
+          // 设置项
+          ...children,
         ],
       ),
     );
@@ -62,148 +109,145 @@ class SettingsScreen extends StatelessWidget {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    bool isLast = false,
   }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Icon(icon, color: Theme.of(context).primaryColor),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.vertical(
+          bottom: isLast ? const Radius.circular(12) : Radius.zero,
+        ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            border: !isLast
+                ? Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context).dividerColor.withOpacity(0.1),
+                      width: 1,
                     ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
+                  )
+                : null,
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: Theme.of(context).primaryColor,
               ),
-            ),
-            const Icon(Icons.arrow_forward_ios, size: 16),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.4),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildAppearanceSettings(BuildContext context) {
+  List<Widget> _buildAppearanceSettings(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     
-    return Column(
-      children: [
-        // 原有的主题和显示选项
-        _buildSettingsOption(
-          context,
-          icon: Icons.brightness_medium,
-          title: '主题和显示',
-          subtitle: '主题模式、主色调和头像大小',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => AppearanceSettingsScreen(),
-              ),
-            );
-          },
-        ),
-        const Divider(height: 1, indent: 72, endIndent: 16),
-      ],
-    );
+    return [
+      _buildSettingsOption(
+        context,
+        icon: Icons.brightness_medium_outlined,
+        title: '主题和显示',
+        subtitle: '主题模式、主色调和头像大小',
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const AppearanceSettingsScreen(),
+            ),
+          );
+        },
+        isLast: true,
+      ),
+    ];
   }
 
-  Widget _buildAppSettings(BuildContext context) {
-    return Column(
-      children: [
-        _buildSettingsOption(
+  List<Widget> _buildAppSettings(BuildContext context) {
+    return [
+      _buildSettingsOption(
+        context,
+        icon: Icons.security_outlined,
+        title: '安全设置',
+        subtitle: '应用锁定、数据保护等',
+        onTap: () => Navigator.push(
           context,
-          icon: Icons.security,
-          title: '安全设置',
-          subtitle: '密码、生物识别等',
-          onTap: () {
-            // 导航到安全设置
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('此功能将在后续版本中实现')),
-            );
-          },
+          MaterialPageRoute(builder: (_) => const SecuritySettingsScreen()),
         ),
-        const Divider(
-          height: 1,
-          indent: 72,
-          endIndent: 16,
-        ),
-        _buildSettingsOption(
+      ),
+      _buildSettingsOption(
+        context,
+        icon: Icons.backup_outlined,
+        title: '备份与恢复',
+        subtitle: '自动备份、手动备份和恢复',
+        onTap: () => Navigator.push(
           context,
-          icon: Icons.backup,
-          title: '备份与恢复',
-          subtitle: '导出或导入数据',
-          onTap: () {
-            // 导航到备份页面
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('此功能将在后续版本中实现')),
-            );
-          },
+          MaterialPageRoute(builder: (_) => const BackupRestoreScreen()),
         ),
-        const Divider(
-          height: 1,
-          indent: 72,
-          endIndent: 16,
-        ),
-      ],
-    );
+        isLast: true,
+      ),
+    ];
   }
 
-  Widget _buildOtherSettings(BuildContext context) {
-    return Column(
-      children: [
-        _buildSettingsOption(
+  List<Widget> _buildOtherSettings(BuildContext context) {
+    return [
+      _buildSettingsOption(
+        context,
+        icon: Icons.info_outline,
+        title: '关于应用',
+        subtitle: '版本信息和介绍',
+        onTap: () => Navigator.push(
           context,
-          icon: Icons.info,
-          title: '关于应用',
-          subtitle: '版本信息和介绍',
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AboutScreen()),
-          ),
+          MaterialPageRoute(builder: (_) => const AboutScreen()),
         ),
-        const Divider(
-          height: 1,
-          indent: 72,
-          endIndent: 16,
-        ),
-        _buildSettingsOption(
+      ),
+      _buildSettingsOption(
+        context,
+        icon: Icons.bug_report_outlined,
+        title: '调试工具',
+        subtitle: '开发者选项',
+        onTap: () => Navigator.push(
           context,
-          icon: Icons.bug_report,
-          title: '调试工具',
-          subtitle: '开发者选项',
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const DebugScreen()),
-          ),
+          MaterialPageRoute(builder: (_) => const DebugScreen()),
         ),
-        const Divider(
-          height: 1,
-          indent: 72,
-          endIndent: 16,
-        ),
-      ],
-    );
+        isLast: true,
+      ),
+    ];
   }
 
   // 获取主题模式文本
-  static String _getThemeModeText(ThemeMode mode) {
+  String _getThemeModeText(ThemeMode mode) {
     switch (mode) {
       case ThemeMode.light:
         return '浅色模式';
