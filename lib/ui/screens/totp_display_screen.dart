@@ -46,6 +46,8 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
   }
 
   void _editEntry(BuildContext context) async {
+    if (!mounted) return;
+    
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -53,11 +55,9 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
       ),
     );
 
-    if (result == true) {
+    if (result == true && mounted) {
       // 如果编辑成功，刷新页面
-      if (mounted) {
-        Navigator.pop(context, true);
-      }
+      Navigator.pop(context, true);
     }
   }
 
@@ -68,7 +68,7 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(widget.entry.issuer ?? '验证码'),
+        title: Text(widget.entry.issuer.isNotEmpty ? widget.entry.issuer : '验证码'),
         centerTitle: true,
         actions: [
           IconButton(
@@ -92,7 +92,7 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Theme.of(context).primaryColor.withOpacity(0.1),
+                  Theme.of(context).primaryColor.withValues(alpha: 0.1),
                   Theme.of(context).canvasColor,
                 ],
               ),
@@ -105,7 +105,7 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.2),
+                    color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -114,7 +114,8 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
                 ),
                 const SizedBox(height: 30),
                 Text(
-                  widget.entry.name ?? widget.entry.issuer ?? '账户',
+                  widget.entry.name.isNotEmpty ? widget.entry.name : 
+                  (widget.entry.issuer.isNotEmpty ? widget.entry.issuer : '账户'),
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 40),
@@ -122,11 +123,11 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor.withOpacity(0.8),
+                    color: Theme.of(context).cardColor.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -153,7 +154,7 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
                       child: CircularProgressIndicator(
                         value: (30 - _remainingTime) / 30,
                         strokeWidth: 6,
-                        backgroundColor: Colors.grey.withOpacity(0.3),
+                        backgroundColor: Colors.grey.withValues(alpha: 0.3),
                         valueColor: AlwaysStoppedAnimation<Color>(
                           _remainingTime <= 5 ? Colors.red : Theme.of(context).primaryColor,
                         ),
@@ -190,7 +191,7 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
                   child: Container(
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black.withValues(alpha: 0.3),
                     child: Stack(
                       children: [
                         // 菜单面板
@@ -204,7 +205,7 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
+                                  color: Colors.black.withValues(alpha: 0.2),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
@@ -273,8 +274,8 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
           content: SingleChildScrollView(
             child: ListBody(
               children: [
-                if (widget.entry.issuer.isNotEmpty)
-                  _DetailRow(title: '发行方', content: widget.entry.issuer),
+                  if (widget.entry.issuer.isNotEmpty)
+                    _DetailRow(title: '发行方', content: widget.entry.issuer),
                 if (widget.entry.name.isNotEmpty)
                   _DetailRow(title: '账户名', content: widget.entry.name),
                 _DetailRow(title: '算法', content: widget.entry.algorithm.toString().split('.').last),
@@ -391,6 +392,7 @@ class _EditEntryScreenState extends State<EditEntryScreen> {
   late final TextEditingController _secretController;
   late final TextEditingController _iconController;
   late final TextEditingController _tagController;
+  late final List<String> _tags;
 
   @override
   void initState() {
@@ -399,7 +401,25 @@ class _EditEntryScreenState extends State<EditEntryScreen> {
     _issuerController = TextEditingController(text: widget.entry.issuer);
     _secretController = TextEditingController(text: widget.entry.secret);
     _iconController = TextEditingController(text: widget.entry.icon);
-    _tagController = TextEditingController(text: widget.entry.tag);
+    _tagController = TextEditingController();
+    _tags = List<String>.from(widget.entry.tags);
+  }
+
+  // 添加标签
+  void _addTag(String tag) {
+    if (tag.isNotEmpty && !_tags.contains(tag)) {
+      setState(() {
+        _tags.add(tag);
+        _tagController.clear();
+      });
+    }
+  }
+
+  // 删除标签
+  void _removeTag(String tag) {
+    setState(() {
+      _tags.remove(tag);
+    });
   }
 
   @override
@@ -418,7 +438,7 @@ class _EditEntryScreenState extends State<EditEntryScreen> {
       final String issuer = _issuerController.text.trim();
       final String secret = _secretController.text.trim().replaceAll(' ', '');
       final String icon = _iconController.text.trim();
-      final String tag = _tagController.text.trim();
+      final List<String> tags = _tags;
 
       final TotpEntry updatedEntry = TotpEntry(
         id: widget.entry.id,
@@ -429,7 +449,7 @@ class _EditEntryScreenState extends State<EditEntryScreen> {
         algorithm: widget.entry.algorithm,
         period: widget.entry.period,
         icon: icon,
-        tag: tag,
+        tags: tags,
       );
 
       final TotpProvider provider = Provider.of<TotpProvider>(context, listen: false);
@@ -449,8 +469,6 @@ class _EditEntryScreenState extends State<EditEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('编辑验证器'),
@@ -479,16 +497,64 @@ class _EditEntryScreenState extends State<EditEntryScreen> {
 
               const SizedBox(height: 16),
 
-              // 标签输入框
-              TextFormField(
-                controller: _tagController,
-                decoration: InputDecoration(
-                  labelText: '标签',
-                  hintText: '例如：工作、个人、重要',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
+              // 多标签输入区域
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '标签',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  // 标签输入和添加按钮
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _tagController,
+                          decoration: InputDecoration(
+                            hintText: '输入标签后按回车添加',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                          ),
+                          onFieldSubmitted: (value) {
+                            _addTag(value.trim());
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: () {
+                          final tag = _tagController.text.trim();
+                          if (tag.isNotEmpty) {
+                            _addTag(tag);
+                          }
+                        },
+                        icon: const Icon(Icons.add),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // 标签显示区域
+                  if (_tags.isNotEmpty)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _tags.map((tag) => Chip(
+                        label: Text(tag),
+                        onDeleted: () => _removeTag(tag),
+                      )).toList(),
+                    ),
+                ],
               ),
 
               const SizedBox(height: 16),

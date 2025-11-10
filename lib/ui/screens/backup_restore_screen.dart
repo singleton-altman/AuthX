@@ -1,9 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:authx/providers/totp_provider.dart';
-import 'package:authx/services/storage_service.dart';
 import 'package:authx/ui/screens/export_screen.dart';
 import 'package:authx/ui/screens/simple_import_screen.dart';
 
@@ -70,7 +67,7 @@ class BackupRestoreScreen extends StatelessWidget {
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).dividerColor.withOpacity(0.1),
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -122,7 +119,7 @@ class BackupRestoreScreen extends StatelessWidget {
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Theme.of(
               context,
-            ).textTheme.bodyMedium?.color?.withOpacity(0.6),
+            ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
           ),
         ),
         onTap: () => _showBackupFrequencyDialog(context),
@@ -136,7 +133,7 @@ class BackupRestoreScreen extends StatelessWidget {
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Theme.of(
               context,
-            ).textTheme.bodyMedium?.color?.withOpacity(0.6),
+            ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
           ),
         ),
         onTap: () => _showBackupLocationDialog(context),
@@ -262,7 +259,7 @@ class BackupRestoreScreen extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(
-            color: Theme.of(context).dividerColor.withOpacity(0.1),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
           ),
         ),
       ),
@@ -282,7 +279,7 @@ class BackupRestoreScreen extends StatelessWidget {
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Theme.of(
               context,
-            ).textTheme.bodyMedium?.color?.withOpacity(0.6),
+            ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
           ),
         ),
         trailing: trailing,
@@ -362,6 +359,9 @@ class BackupRestoreScreen extends StatelessWidget {
     BuildContext context,
     TotpProvider totpProvider,
   ) async {
+    // 获取当前BuildContext的引用
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
     try {
       // 显示备份进度
       showDialog(
@@ -384,16 +384,17 @@ class BackupRestoreScreen extends StatelessWidget {
       // 模拟备份过程
       await Future.delayed(const Duration(seconds: 2));
 
-      Navigator.of(context).pop(); // 关闭进度对话框
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('备份创建成功！')));
+      // 检查BuildContext是否仍然有效
+      if (context.mounted) {
+        Navigator.of(context).pop(); // 关闭进度对话框
+        scaffoldMessenger.showSnackBar(const SnackBar(content: Text('备份创建成功！')));
+      }
     } catch (e) {
-      Navigator.of(context).pop(); // 关闭进度对话框
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('备份失败：$e')));
+      // 检查BuildContext是否仍然有效
+      if (context.mounted) {
+        Navigator.of(context).pop(); // 关闭进度对话框
+        scaffoldMessenger.showSnackBar(SnackBar(content: Text('备份失败：$e')));
+      }
     }
   }
 
@@ -432,9 +433,9 @@ class BackupRestoreScreen extends StatelessWidget {
               onPressed: () {
                 // 实现验证逻辑
                 Navigator.of(context).pop();
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('备份文件完整性验证通过！')));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('备份文件完整性验证通过！')));
+                }
               },
               child: const Text('验证'),
             ),
@@ -478,9 +479,9 @@ class BackupRestoreScreen extends StatelessWidget {
               onPressed: () {
                 // 实现清理逻辑
                 Navigator.of(context).pop();
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('旧备份文件清理完成！')));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('旧备份文件清理完成！')));
+                }
               },
               child: const Text('清理'),
             ),

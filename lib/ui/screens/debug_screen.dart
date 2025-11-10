@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:authx/models/totp_entry.dart';
 import 'package:authx/services/totp_service.dart';
 import 'package:authx/ui/screens/totp_display_screen.dart';
-import 'dart:typed_data';
-import 'package:crypto/crypto.dart';
+
 import 'package:authx/utils/base32.dart';
 
 class DebugScreen extends StatefulWidget {

@@ -72,7 +72,7 @@ class _ExpandedFabState extends State<ExpandedFab>
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 4,
                 offset: const Offset(0, 1),
               ),
@@ -103,7 +103,7 @@ class _ExpandedFabState extends State<ExpandedFab>
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     // 获取状态栏高度
-    final statusBarHeight = MediaQuery.of(context).padding.top;
+
 
     return Stack(
       children: [
@@ -128,8 +128,8 @@ class _ExpandedFabState extends State<ExpandedFab>
                       // 设置容器高度为整个屏幕高度
                       height: MediaQuery.of(context).size.height,
                       // 设置容器颜色并应用透明度动画
-                      color: Colors.black.withOpacity(
-                        0.3 * _fadeAnimation.value,
+                      color: Colors.black.withValues(
+                        alpha: 0.3 * _fadeAnimation.value,
                       ),
                     ),
                   );

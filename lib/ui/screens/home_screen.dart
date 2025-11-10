@@ -15,7 +15,7 @@ import 'package:authx/ui/screens/export_screen.dart';
 import 'package:authx/ui/widgets/expanded_fab.dart';
 import 'package:authx/ui/widgets/circular_progress_avatar.dart';
 // 添加必要的导入
-import 'dart:convert';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -54,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             margin: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.1),
+              color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: IconButton(
@@ -219,7 +219,28 @@ class _HomeScreenState extends State<HomeScreen> {
               return false; // 不需要确认对话框
             } else {
               // 向左滑动 - 删除功能
-              return await _confirmDelete(context, entry);
+              return await showDialog<bool>(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('删除条目'),
+                    content: Text('确定要删除 "${entry.issuer.isNotEmpty ? entry.issuer : '未知服务'}" 吗？此操作无法撤销。'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('取消'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                        ),
+                        child: const Text('删除'),
+                      ),
+                    ],
+                  );
+                },
+              );
             }
           },
           onDismissed: (direction) {
@@ -270,16 +291,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
-                        if (entry.tag.isNotEmpty)
+                        if (entry.tags.isNotEmpty)
                           Container(
                             margin: const EdgeInsets.only(top: 2),
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                             decoration: BoxDecoration(
-                              color: theme.primaryColor.withOpacity(0.1),
+                              color: theme.primaryColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              entry.tag,
+                              entry.tags.join(', '),
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.primaryColor,
                                 fontSize: 10,
@@ -307,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: (remainingTime <= 5 ? Colors.red : theme.primaryColor).withOpacity(0.1),
+                          color: (remainingTime <= 5 ? Colors.red : theme.primaryColor).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -331,73 +352,13 @@ class _HomeScreenState extends State<HomeScreen> {
           height: 1,
           thickness: 0.5,
           indent: avatarSize * 2 + 12 + 12, // 与图标和间距对齐
-          color: theme.dividerColor.withOpacity(0.2),
+          color: theme.dividerColor.withValues(alpha: 0.2),
         ),
       ],
     );
   }
 
-  /// 确认编辑条目
-  Future<bool?> _confirmEdit(BuildContext context, TotpEntry entry) async {
-    return showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('编辑条目'),
-          content: Text('确定要编辑 "${entry.issuer.isNotEmpty ? entry.issuer : '未知服务'}" 吗？'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('取消'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('编辑'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
-  /// 确认删除条目
-  Future<bool?> _confirmDelete(BuildContext context, TotpEntry entry) async {
-    return showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('删除条目'),
-          content: Text('确定要删除 "${entry.issuer.isNotEmpty ? entry.issuer : '未知服务'}" 吗？此操作无法撤销。'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('取消'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-              ),
-              child: const Text('删除'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  /// 编辑条目
-  void _editEntry(BuildContext context, TotpEntry entry) async {
-    // 这里可以导航到编辑页面
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('编辑功能将在后续版本中实现')),
-      );
-      
-      // 恢复列表项位置
-      Provider.of<TotpProvider>(context, listen: false).loadEntries();
-    }
-  }
 
   /// 删除条目
   void _deleteEntry(BuildContext context, TotpEntry entry) {
@@ -434,7 +395,7 @@ class EmptyStateView extends StatelessWidget {
           Icon(
             Icons.lock_outline, 
             size: 64, 
-            color: theme.primaryColor.withOpacity(0.5)
+            color: theme.primaryColor.withValues(alpha: 0.5)
           ),
           const SizedBox(height: 16),
           Text(

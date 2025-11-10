@@ -1,4 +1,4 @@
-import 'dart:convert';
+
 import 'package:authx/models/totp_entry.dart';
 
 class TotpParseResult {
@@ -110,7 +110,7 @@ class TotpParser {
         'algorithm': entry.algorithm,
         'period': entry.period.toString(),
         if (entry.icon.isNotEmpty) 'icon': entry.icon, // 添加图标参数
-        if (entry.tag.isNotEmpty) 'tag': entry.tag, // 添加标签参数
+        if (entry.tags.isNotEmpty) 'tag': entry.tags.join(','), // 添加标签参数
       },
     );
     

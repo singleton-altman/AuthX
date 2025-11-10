@@ -1,11 +1,10 @@
-import 'dart:async';
+
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:authx/models/totp_entry.dart';
 import 'package:authx/providers/totp_provider.dart';
 import 'package:flutter/services.dart';
-import 'package:authx/ui/screens/qr_scanner_screen.dart';
 import 'package:authx/utils/totp_parser.dart';
 import 'package:authx/utils/base32.dart';
 
@@ -23,9 +22,26 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
   final _secretController = TextEditingController();
   final _iconController = TextEditingController(); // 图标输入控制器
   final _tagController = TextEditingController(); // 标签输入控制器
+  final List<String> _tags = []; // 标签列表
   
-  bool _isManualInput = true;
-  String? _scanResult;
+
+
+  // 添加标签
+  void _addTag(String tag) {
+    if (tag.isNotEmpty && !_tags.contains(tag)) {
+      setState(() {
+        _tags.add(tag);
+        _tagController.clear();
+      });
+    }
+  }
+
+  // 删除标签
+  void _removeTag(String tag) {
+    setState(() {
+      _tags.remove(tag);
+    });
+  }
 
   @override
   void dispose() {
@@ -44,7 +60,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       final String issuer = _issuerController.text.trim();
       final String secret = _secretController.text.trim().replaceAll(' ', '');
       final String icon = _iconController.text.trim(); // 获取图标链接
-      final String tag = _tagController.text.trim(); // 获取标签
+      final List<String> tags = _tags; // 获取标签列表
       
       final TotpEntry entry = TotpEntry(
         id: id,
@@ -52,7 +68,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
         issuer: issuer,
         secret: secret,
         icon: icon, // 添加图标字段
-        tag: tag, // 添加标签字段
+        tags: tags, // 添加标签列表
       );
       
       final TotpProvider provider = Provider.of<TotpProvider>(context, listen: false);
@@ -76,42 +92,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
            random.nextInt(10000).toString();
   }
 
-  void _scanQRCode() async {
-    final String? result = await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const QRScannerScreen(),
-      ),
-    );
 
-    if (result != null && mounted) {
-      setState(() {
-        _scanResult = result;
-      });
-      
-      try {
-        final parsed = TotpParser.parseUri(result);
-        _nameController.text = parsed.name;
-        _issuerController.text = parsed.issuer;
-        _secretController.text = parsed.secret;
-        
-        setState(() {
-          _isManualInput = false;
-        });
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('二维码解析成功')),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('无法解析二维码内容: $e')),
-          );
-        }
-      }
-    }
-  }
 
   void _checkClipboardForTotpUri() async {
     final ClipboardData? data = await Clipboard.getData(Clipboard.kTextPlain);
@@ -124,9 +105,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
         _issuerController.text = parsed.issuer;
         _secretController.text = parsed.secret;
         
-        setState(() {
-          _isManualInput = false;
-        });
+
         
       } catch (e) {
         if (mounted) {
@@ -144,8 +123,6 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Scaffold(
       appBar: AppBar(
         title: const Text('添加验证器'),
@@ -181,16 +158,64 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
               
               const SizedBox(height: 16),
               
-              // 标签输入框
-              TextFormField(
-                controller: _tagController,
-                decoration: InputDecoration(
-                  labelText: '标签',
-                  hintText: '例如：工作、个人、重要',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
+              // 多标签输入区域
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '标签',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  // 标签输入和添加按钮
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _tagController,
+                          decoration: InputDecoration(
+                            hintText: '输入标签后按回车添加',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                          ),
+                          onFieldSubmitted: (value) {
+                            _addTag(value.trim());
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: () {
+                          final tag = _tagController.text.trim();
+                          if (tag.isNotEmpty) {
+                            _addTag(tag);
+                          }
+                        },
+                        icon: const Icon(Icons.add),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // 标签显示区域
+                  if (_tags.isNotEmpty)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _tags.map((tag) => Chip(
+                        label: Text(tag),
+                        onDeleted: () => _removeTag(tag),
+                      )).toList(),
+                    ),
+                ],
               ),
               
               const SizedBox(height: 16),
