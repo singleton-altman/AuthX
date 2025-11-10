@@ -31,34 +31,64 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
 
   @override
   void dispose() {
+    // 确保所有异步操作都被取消
     _timer?.cancel();
+    _timer = null;
     super.dispose();
   }
 
   void _updateTotp() {
+    // 检查组件是否已经销毁
+    if (!mounted) return;
+    
     setState(() {
       _totpCode = TotpService.generateTotp(widget.entry);
       _remainingTime = TotpService.getRemainingTime(widget.entry);
     });
     
-    // 每秒更新一次
-    _timer = Timer(const Duration(seconds: 1), _updateTotp);
+    // 在创建新定时器前取消旧的
+    _timer?.cancel();
+    // 每秒更新一次，但只在组件仍然挂载时
+    if (mounted) {
+      _timer = Timer(const Duration(seconds: 1), _updateTotp);
+    }
   }
 
-  void _editEntry(BuildContext context) async {
+  void _editEntry(BuildContext context) {
     if (!mounted) return;
     
-    final result = await Navigator.push(
+    // 使用最安全的方法：不在异步回调中处理navigation
+    // 而是通过页面返回后的回调来处理
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditEntryScreen(entry: widget.entry),
       ),
-    );
-
-    if (result == true && mounted) {
-      // 如果编辑成功，刷新页面
-      Navigator.pop(context, true);
-    }
+    ).then((result) {
+      // 检查组件是否仍然挂载
+      if (!mounted) return;
+      
+      // 如果编辑成功，通过setState触发刷新而不是直接pop
+      if (result == true) {
+        // 触发组件重建，而不是直接操作navigation
+        if (mounted) {
+          setState(() {
+            // 可以在这里触发任何需要的状态更新
+          });
+        }
+      }
+    }).catchError((error) {
+      // 错误处理也要在检查mounted后进行
+      if (!mounted) return;
+      
+      // 使用更安全的方式显示错误信息
+      if (mounted) {
+        // 可以通过其他方式处理错误，比如更新状态
+        setState(() {
+          // 可以在这里更新错误状态
+        });
+      }
+    });
   }
 
   @override

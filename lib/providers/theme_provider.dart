@@ -4,7 +4,7 @@ import 'package:authx/utils/app_theme.dart';
 class ThemeProvider extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.system;
   Color _primaryColor = AppTheme.primaryColor;
-  double _avatarSize = 20.0; // 默认头像大小
+  double _avatarSize = 40.0; // 默认头像大小改为40，符合规范10-40范围
   double _codeFontSize = 20.0; // 默认验证码文字大小
   
   // 获取当前主题模式
@@ -31,9 +31,9 @@ class ThemeProvider extends ChangeNotifier {
     notifyListeners();
   }
   
-  // 设置头像大小
+  // 设置头像大小，限制在10-40范围内
   void setAvatarSize(double size) {
-    _avatarSize = size;
+    _avatarSize = size.clamp(10.0, 40.0);
     notifyListeners();
   }
   
