@@ -99,7 +99,7 @@ class _ExportScreenState extends State<ExportScreen> {
               '$label:',
               style: TextStyle(
                 fontWeight: FontWeight.w500,
-                color: colorScheme.onSurface.withOpacity(0.6),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ),
@@ -175,14 +175,14 @@ class _ExportScreenState extends State<ExportScreen> {
                   Icon(
                     Icons.inbox_outlined,
                     size: 64,
-                    color: colorScheme.onSurface.withOpacity(0.5),
+                    color: colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     '暂无TOTP条目',
                     style: TextStyle(
                       fontSize: 18,
-                      color: colorScheme.onSurface.withOpacity(0.7),
+                      color: colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -212,7 +212,7 @@ class _ExportScreenState extends State<ExportScreen> {
                           )
                         : null,
                     filled: true,
-                    fillColor: colorScheme.surfaceVariant,
+                    fillColor: colorScheme.surfaceContainerHighest,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(
                         AppTheme.borderRadius,
@@ -281,14 +281,14 @@ class _ExportScreenState extends State<ExportScreen> {
                             Icon(
                               Icons.search_off,
                               size: 64,
-                              color: colorScheme.onSurface.withOpacity(0.5),
+                              color: colorScheme.onSurface.withValues(alpha: 0.5),
                             ),
                             const SizedBox(height: 16),
                             Text(
                               '未找到匹配的条目',
                               style: TextStyle(
                                 fontSize: 18,
-                                color: colorScheme.onSurface.withOpacity(0.7),
+                                color: colorScheme.onSurface.withValues(alpha: 0.7),
                               ),
                             ),
                           ],
@@ -309,11 +309,11 @@ class _ExportScreenState extends State<ExportScreen> {
                               ),
                             ),
                             elevation: 0,
-                            color: colorScheme.surfaceVariant,
+                            color: colorScheme.surfaceContainerHighest,
                             child: ExpansionTile(
                               leading: CircleAvatar(
                                 backgroundColor: colorScheme.primary
-                                    .withOpacity(0.1),
+                                    .withValues(alpha: 0.1),
                                 child: Text(
                                   entry.name.isNotEmpty
                                       ? entry.name[0].toUpperCase()
@@ -336,7 +336,7 @@ class _ExportScreenState extends State<ExportScreen> {
                                       entry.issuer,
                                       style: TextStyle(
                                         color: colorScheme.onSurface
-                                            .withOpacity(0.6),
+                                            .withValues(alpha: 0.6),
                                       ),
                                     )
                                   : null,

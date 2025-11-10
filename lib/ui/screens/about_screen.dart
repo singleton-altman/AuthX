@@ -5,7 +5,7 @@ class AboutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+
 
     return Scaffold(
       appBar: AppBar(title: const Text('关于'), centerTitle: true),
@@ -156,7 +156,7 @@ class AboutScreen extends StatelessWidget {
     required String title,
     required Widget child,
   }) {
-    final theme = Theme.of(context);
+
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,10 +170,10 @@ class AboutScreen extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: theme.cardColor,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: theme.dividerColor.withOpacity(0.5),
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
               width: 0.5,
             ),
           ),

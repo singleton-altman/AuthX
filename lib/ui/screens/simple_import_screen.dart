@@ -12,7 +12,6 @@ class SimpleImportScreen extends StatefulWidget {
 }
 
 class _SimpleImportScreenState extends State<SimpleImportScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _uriController = TextEditingController();
   
   bool _isProcessing = false;

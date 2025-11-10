@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:authx/providers/totp_provider.dart';
-import 'package:authx/services/storage_service.dart';
+
 
 class SecuritySettingsScreen extends StatelessWidget {
   const SecuritySettingsScreen({super.key});
@@ -66,7 +66,7 @@ class SecuritySettingsScreen extends StatelessWidget {
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).dividerColor.withOpacity(0.1),
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -121,7 +121,7 @@ class SecuritySettingsScreen extends StatelessWidget {
         trailing: Text(
           '立即锁定',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
           ),
         ),
         onTap: () => _showLockTimeoutDialog(context),
@@ -237,7 +237,7 @@ class SecuritySettingsScreen extends StatelessWidget {
           decoration: BoxDecoration(
             border: Border(
               top: BorderSide(
-                color: Theme.of(context).dividerColor.withOpacity(0.1),
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
                 width: 1,
               ),
             ),
@@ -258,7 +258,7 @@ class SecuritySettingsScreen extends StatelessWidget {
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
+                        color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                         fontSize: 13,
                       ),
                     ),

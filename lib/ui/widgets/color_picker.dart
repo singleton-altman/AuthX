@@ -21,7 +21,7 @@ class ColorPicker extends StatelessWidget {
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.3)),
+            border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [
@@ -37,7 +37,7 @@ class ColorPicker extends StatelessWidget {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -63,7 +63,7 @@ class ColorPicker extends StatelessWidget {
 
   // 将颜色转换为十六进制字符串
   String _colorToHex(Color color) {
-    return '#${color.value.toRadixString(16).substring(2, 8).toUpperCase()}';
+    return '#${color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
   }
 
   // 显示颜色选择器对话框
@@ -110,7 +110,7 @@ class ColorPickerWidget extends StatefulWidget {
   });
 
   @override
-  _ColorPickerWidgetState createState() => _ColorPickerWidgetState();
+  State<ColorPickerWidget> createState() => _ColorPickerWidgetState();
 }
 
 class _ColorPickerWidgetState extends State<ColorPickerWidget> {
@@ -185,7 +185,7 @@ class _ColorPickerWidgetState extends State<ColorPickerWidget> {
 
   // 将颜色转换为十六进制字符串
   String _colorToHex(Color color) {
-    return '#${color.value.toRadixString(16).substring(2, 8).toUpperCase()}';
+    return '#${color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
   }
 }
 
@@ -248,7 +248,7 @@ class _ColorHuePickerState extends State<_ColorHuePicker> {
     setState(() {
       _hue = hue;
       Color newColor = HSVColor.fromAHSV(
-        widget.initialColor.opacity,
+        widget.initialColor.a,
         _hue,
         _colorToSaturation(widget.initialColor),
         _colorToValue(widget.initialColor),
@@ -407,7 +407,7 @@ class _ColorSaturationBrightnessPickerState
       _saturation = saturation;
       _value = value;
       Color newColor = HSVColor.fromAHSV(
-        widget.initialColor.opacity,
+        widget.initialColor.a,
         HSVColor.fromColor(widget.initialColor).hue,
         saturation,
         value,
@@ -501,7 +501,7 @@ class _ColorAlphaPickerState extends State<_ColorAlphaPicker> {
   @override
   void initState() {
     super.initState();
-    _alpha = widget.initialColor.opacity;
+    _alpha = widget.initialColor.a;
   }
 
   @override
@@ -518,7 +518,7 @@ class _ColorAlphaPickerState extends State<_ColorAlphaPicker> {
           onChanged: (double value) {
             setState(() {
               _alpha = value;
-              Color newColor = widget.initialColor.withOpacity(value);
+              Color newColor = widget.initialColor.withValues(alpha: value);
               widget.onColorChanged(newColor);
             });
           },

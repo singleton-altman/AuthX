@@ -7,7 +7,7 @@ class TotpEntry {
   final String algorithm;
   final int period;
   final String icon; // 添加图标字段
-  final String tag; // 添加标签字段
+  final List<String> tags; // 添加标签列表
 
   TotpEntry({
     required this.id,
@@ -18,7 +18,7 @@ class TotpEntry {
     this.algorithm = 'SHA1',
     this.period = 30,
     this.icon = '', // 默认为空字符串
-    this.tag = '', // 默认为空字符串
+    this.tags = const [], // 默认为空列表
   });
 
   // 从JSON创建TOTP条目
@@ -32,7 +32,7 @@ class TotpEntry {
       algorithm: json['algorithm'] ?? 'SHA1',
       period: json['period'] ?? 30,
       icon: json['icon'] ?? '', // 从JSON读取图标字段
-      tag: json['tag'] ?? '', // 从JSON读取标签字段
+      tags: json['tags'] != null ? List<String>.from(json['tags']) : const [], // 从JSON读取标签列表
     );
   }
 
@@ -47,7 +47,7 @@ class TotpEntry {
       'algorithm': algorithm,
       'period': period,
       'icon': icon, // 将图标字段转换为JSON
-      'tag': tag, // 将标签字段转换为JSON
+      'tags': tags, // 将标签列表转换为JSON
     };
   }
 }

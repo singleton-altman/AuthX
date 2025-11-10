@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:authx/providers/theme_provider.dart';
 import 'package:authx/ui/screens/about_screen.dart';
 import 'package:authx/ui/screens/debug_screen.dart';
 import 'package:authx/ui/screens/appearance_settings_screen.dart';
 import 'package:authx/ui/screens/security_settings_screen.dart';
 import 'package:authx/ui/screens/backup_restore_screen.dart';
-import 'package:authx/utils/app_theme.dart'; // 添加对 app_theme.dart 的导入
+ // 添加对 app_theme.dart 的导入
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -69,7 +67,7 @@ class SettingsScreen extends StatelessWidget {
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).dividerColor.withOpacity(0.1),
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -124,7 +122,7 @@ class SettingsScreen extends StatelessWidget {
             border: !isLast
                 ? Border(
                     bottom: BorderSide(
-                      color: Theme.of(context).dividerColor.withOpacity(0.1),
+                      color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
                       width: 1,
                     ),
                   )
@@ -152,7 +150,7 @@ class SettingsScreen extends StatelessWidget {
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
+                        color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                         fontSize: 13,
                       ),
                     ),
@@ -163,7 +161,7 @@ class SettingsScreen extends StatelessWidget {
               Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 14,
-                color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.4),
+                color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.4),
               ),
             ],
           ),
@@ -173,7 +171,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   List<Widget> _buildAppearanceSettings(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+
     
     return [
       _buildSettingsOption(
@@ -246,15 +244,5 @@ class SettingsScreen extends StatelessWidget {
     ];
   }
 
-  // 获取主题模式文本
-  String _getThemeModeText(ThemeMode mode) {
-    switch (mode) {
-      case ThemeMode.light:
-        return '浅色模式';
-      case ThemeMode.dark:
-        return '深色模式';
-      case ThemeMode.system:
-        return '跟随系统';
-    }
-  }
+
 }

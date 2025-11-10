@@ -32,7 +32,7 @@ class CircularProgressAvatar extends StatelessWidget {
           child: CircularProgressIndicator(
             value: 1.0,
             strokeWidth: 3,
-            backgroundColor: Colors.grey.withOpacity(0.3),
+            backgroundColor: Colors.grey.withValues(alpha: 0.3),
             valueColor: AlwaysStoppedAnimation<Color>(Colors.transparent),
           ),
         ),
@@ -76,14 +76,14 @@ class CircularProgressAvatar extends StatelessWidget {
           final Uint8List imageBytes = _decodeBase64Image(icon!);
           return CircleAvatar(
             radius: size - 3, // 减去进度条的半宽度
-            backgroundColor: theme.primaryColor.withOpacity(0.1),
+            backgroundColor: theme.primaryColor.withValues(alpha: 0.1),
             backgroundImage: MemoryImage(imageBytes),
           );
         } else {
           // 网络图片链接
           return CircleAvatar(
             radius: size - 3, // 减去进度条的半宽度
-            backgroundColor: theme.primaryColor.withOpacity(0.1),
+            backgroundColor: theme.primaryColor.withValues(alpha: 0.1),
             backgroundImage: NetworkImage(icon!),
           );
         }
@@ -100,7 +100,7 @@ class CircularProgressAvatar extends StatelessWidget {
   Widget _buildDefaultAvatar(ThemeData theme) {
     return Container(
       decoration: BoxDecoration(
-        color: theme.primaryColor.withOpacity(0.1),
+        color: theme.primaryColor.withValues(alpha: 0.1),
         shape: BoxShape.circle,
       ),
       child: Center(
