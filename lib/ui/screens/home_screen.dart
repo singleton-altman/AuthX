@@ -292,21 +292,24 @@ class _HomeScreenState extends State<HomeScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         if (entry.tags.isNotEmpty)
-                          Container(
-                            margin: const EdgeInsets.only(top: 2),
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: theme.primaryColor.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              entry.tags.join(', '),
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.primaryColor,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
+                          Wrap(
+                            spacing: 4,
+                            runSpacing: 2,
+                            children: entry.tags.map((tag) => Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: theme.primaryColor.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                            ),
+                              child: Text(
+                                tag,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.primaryColor,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            )).toList(),
                           ),
                       ],
                     ),
