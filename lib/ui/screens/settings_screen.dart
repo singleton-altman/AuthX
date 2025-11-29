@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:authx/ui/screens/about_screen.dart';
 import 'package:authx/ui/screens/debug_screen.dart';
 import 'package:authx/ui/screens/appearance_settings_screen.dart';
 import 'package:authx/ui/screens/security_settings_screen.dart';
 import 'package:authx/ui/screens/backup_restore_screen.dart';
- // 添加对 app_theme.dart 的导入
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -12,118 +12,242 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFFF7F7F7),
       appBar: AppBar(
-        title: const Text('设置'),
+        title: const Text(
+          '设置',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
+        ),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: Colors.transparent,
-        foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
+        backgroundColor: const Color(0xFFF7F7F7),
+        foregroundColor: Colors.black,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+        ),
       ),
       body: ListView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
-          // 外观设置
-          _buildSettingsSection(
-            context,
-            title: '外观设置',
-            icon: Icons.palette_outlined,
-            children: _buildAppearanceSettings(context),
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           
-          // 应用设置
-          _buildSettingsSection(
-            context,
-            title: '应用设置',
-            icon: Icons.settings_outlined,
-            children: _buildAppSettings(context),
-          ),
-          const SizedBox(height: 16),
+          // 用户信息区域
+          _buildUserInfoSection(context),
           
-          // 其他
-          _buildSettingsSection(
-            context,
-            title: '其他',
-            icon: Icons.more_horiz_outlined,
-            children: _buildOtherSettings(context),
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 30),
+          
+          // 设置选项组
+          _buildSettingsGroup(context, [
+            _buildSettingsItem(
+              context,
+              icon: Icons.message_outlined,
+              title: '账号与安全',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SecuritySettingsScreen()),
+                );
+              },
+            ),
+            _buildSettingsItem(
+              context,
+              icon: Icons.notifications_outlined,
+              title: '新消息通知',
+              onTap: () {
+                // TODO: 实现通知设置
+              },
+            ),
+            _buildSettingsItem(
+              context,
+              icon: Icons.lock_outline,
+              title: '隐私',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SecuritySettingsScreen()),
+                );
+              },
+            ),
+          ]),
+          
+          const SizedBox(height: 10),
+          
+          _buildSettingsGroup(context, [
+            _buildSettingsItem(
+              context,
+              icon: Icons.palette_outlined,
+              title: '通用',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AppearanceSettingsScreen()),
+                );
+              },
+            ),
+            _buildSettingsItem(
+              context,
+              icon: Icons.storage_outlined,
+              title: '存储空间',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const BackupRestoreScreen()),
+                );
+              },
+            ),
+          ]),
+          
+          const SizedBox(height: 10),
+          
+          _buildSettingsGroup(context, [
+            _buildSettingsItem(
+              context,
+              icon: Icons.help_outline,
+              title: '帮助与反馈',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AboutScreen()),
+                );
+              },
+            ),
+            _buildSettingsItem(
+              context,
+              icon: Icons.info_outline,
+              title: '关于微信',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AboutScreen()),
+                );
+              },
+            ),
+          ]),
+          
+          const SizedBox(height: 10),
+          
+          _buildSettingsGroup(context, [
+            _buildSettingsItem(
+              context,
+              icon: Icons.bug_report_outlined,
+              title: '调试工具',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const DebugScreen()),
+                );
+              },
+              showDivider: false,
+            ),
+          ]),
+          
+          const SizedBox(height: 40),
         ],
       ),
     );
   }
 
-  Widget _buildSettingsSection(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    required List<Widget> children,
-  }) {
+  Widget _buildUserInfoSection(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
-          width: 1,
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          // 标题栏
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.person,
+              size: 30,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  icon,
-                  size: 20,
-                  color: Theme.of(context).primaryColor,
-                ),
-                const SizedBox(width: 12),
                 Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  'AuthX 用户',
+                  style: TextStyle(
+                    fontSize: 17,
                     fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'ID: 123456789',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey,
                   ),
                 ),
               ],
             ),
           ),
-          // 设置项
-          ...children,
+          const Icon(
+            Icons.qr_code_scanner,
+            size: 20,
+            color: Colors.grey,
+          ),
+          const SizedBox(width: 8),
+          const Icon(
+            Icons.arrow_forward_ios,
+            size: 12,
+            color: Colors.grey,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSettingsOption(
+  Widget _buildSettingsGroup(BuildContext context, List<Widget> children) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: children,
+      ),
+    );
+  }
+
+  Widget _buildSettingsItem(
     BuildContext context, {
     required IconData icon,
     required String title,
-    required String subtitle,
     required VoidCallback onTap,
-    bool isLast = false,
+    String? subtitle,
+    bool showDivider = true,
   }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.vertical(
-          bottom: isLast ? const Radius.circular(12) : Radius.zero,
-        ),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            border: !isLast
+            border: showDivider
                 ? Border(
                     bottom: BorderSide(
-                      color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
-                      width: 1,
+                      color: const Color(0xFFE5E5E5),
+                      width: 0.5,
                     ),
                   )
                 : null,
@@ -132,8 +256,8 @@ class SettingsScreen extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                size: 20,
-                color: Theme.of(context).primaryColor,
+                size: 22,
+                color: Colors.black87,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -142,26 +266,28 @@ class SettingsScreen extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w500,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.black,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                        fontSize: 13,
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 14,
-                color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.4),
+              const Icon(
+                Icons.arrow_forward_ios,
+                size: 12,
+                color: Colors.grey,
               ),
             ],
           ),
@@ -169,80 +295,4 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
   }
-
-  List<Widget> _buildAppearanceSettings(BuildContext context) {
-
-    
-    return [
-      _buildSettingsOption(
-        context,
-        icon: Icons.brightness_medium_outlined,
-        title: '主题和显示',
-        subtitle: '主题模式、主色调和头像大小',
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const AppearanceSettingsScreen(),
-            ),
-          );
-        },
-        isLast: true,
-      ),
-    ];
-  }
-
-  List<Widget> _buildAppSettings(BuildContext context) {
-    return [
-      _buildSettingsOption(
-        context,
-        icon: Icons.security_outlined,
-        title: '安全设置',
-        subtitle: '应用锁定、数据保护等',
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const SecuritySettingsScreen()),
-        ),
-      ),
-      _buildSettingsOption(
-        context,
-        icon: Icons.backup_outlined,
-        title: '备份与恢复',
-        subtitle: '自动备份、手动备份和恢复',
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const BackupRestoreScreen()),
-        ),
-        isLast: true,
-      ),
-    ];
-  }
-
-  List<Widget> _buildOtherSettings(BuildContext context) {
-    return [
-      _buildSettingsOption(
-        context,
-        icon: Icons.info_outline,
-        title: '关于应用',
-        subtitle: '版本信息和介绍',
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const AboutScreen()),
-        ),
-      ),
-      _buildSettingsOption(
-        context,
-        icon: Icons.bug_report_outlined,
-        title: '调试工具',
-        subtitle: '开发者选项',
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const DebugScreen()),
-        ),
-        isLast: true,
-      ),
-    ];
-  }
-
-
 }

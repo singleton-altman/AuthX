@@ -1,5 +1,5 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:authx/providers/theme_provider.dart';
 import 'package:authx/ui/widgets/color_picker.dart';
@@ -10,12 +10,27 @@ class AppearanceSettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF7F7F7),
       appBar: AppBar(
-        title: const Text('外观设置'),
+        backgroundColor: const Color(0xFF07C160),
+        elevation: 0,
+        title: const Text(
+          '外观设置',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
           onPressed: () => Navigator.of(context).pop(),
+        ),
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
         ),
       ),
       body: const _AppearanceSettingsBody(),
@@ -37,555 +52,374 @@ class _AppearanceSettingsBodyState extends State<_AppearanceSettingsBody> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 主题设置部分
-          _ThemeSettingsSection(themeProvider: themeProvider),
+          const SizedBox(height: 20),
           
-          const SizedBox(height: 30),
+          // 主题设置
+          _buildWeChatSettingsGroup(
+            context,
+            title: '主题模式',
+            children: [
+              _buildThemeOption(
+                context,
+                title: '浅色模式',
+                icon: Icons.wb_sunny,
+                isSelected: themeProvider.themeMode == ThemeMode.light,
+                onTap: () => themeProvider.setThemeMode(ThemeMode.light),
+              ),
+              _buildThemeOption(
+                context,
+                title: '深色模式',
+                icon: Icons.nightlight,
+                isSelected: themeProvider.themeMode == ThemeMode.dark,
+                onTap: () => themeProvider.setThemeMode(ThemeMode.dark),
+              ),
+              _buildThemeOption(
+                context,
+                title: '跟随系统',
+                icon: Icons.settings_system_daydream,
+                isSelected: themeProvider.themeMode == ThemeMode.system,
+                onTap: () => themeProvider.setThemeMode(ThemeMode.system),
+                showDivider: false,
+              ),
+            ],
+          ),
           
-          // 颜色设置部分
-          _ColorSettingsSection(themeProvider: themeProvider),
+          const SizedBox(height: 20),
           
-          const SizedBox(height: 30),
+          // 颜色设置
+          _buildWeChatSettingsGroup(
+            context,
+            title: '主题颜色',
+            children: [
+              _buildColorOption(
+                context,
+                title: '主色调',
+                subtitle: '选择应用的主色调',
+                color: themeProvider.primaryColor,
+                onTap: () => _showColorPicker(context, themeProvider),
+              ),
+              _buildColorOption(
+                context,
+                title: '重置颜色',
+                subtitle: '恢复默认颜色设置',
+                color: null,
+                onTap: () => _resetColors(themeProvider),
+                showDivider: false,
+              ),
+            ],
+          ),
           
-          // 显示设置部分
-          _DisplaySettingsSection(themeProvider: themeProvider),
+          const SizedBox(height: 20),
+          
+          // 显示设置
+          _buildWeChatSettingsGroup(
+            context,
+            title: '显示设置',
+            children: [
+              _buildSliderOption(
+                context,
+                title: '头像大小',
+                subtitle: '调整验证器列表中的头像大小',
+                value: themeProvider.avatarSize,
+                min: 32.0,
+                max: 64.0,
+                onChanged: (value) => themeProvider.setAvatarSize(value),
+              ),
+              _buildSliderOption(
+                context,
+                title: '验证码大小',
+                subtitle: '调整验证码字体大小',
+                value: themeProvider.codeFontSize,
+                min: 16.0,
+                max: 28.0,
+                onChanged: (value) => themeProvider.setCodeFontSize(value),
+                showDivider: false,
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 40),
         ],
       ),
     );
   }
-}
 
-// 颜色设置部分
-class _ColorSettingsSection extends StatelessWidget {
-  final ThemeProvider themeProvider;
-
-  const _ColorSettingsSection({required this.themeProvider});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 标题
-        Padding(
-          padding: const EdgeInsets.only(bottom: 20),
-          child: Row(
-            children: [
-              Icon(Icons.palette, size: 24, color: theme.primaryColor),
-              const SizedBox(width: 12),
-              Text(
-                '主题颜色',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // 使用无极颜色选择器
-        ColorPicker(
-          selectedColor: themeProvider.primaryColor,
-          onColorChanged: (color) => themeProvider.setPrimaryColor(color),
-        ),
-      ],
-    );
-  }
-}
-
-// 显示设置部分
-class _DisplaySettingsSection extends StatelessWidget {
-  final ThemeProvider themeProvider;
-
-  const _DisplaySettingsSection({
-    required this.themeProvider,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 标题
-        Padding(
-          padding: const EdgeInsets.only(bottom: 20),
-          child: Row(
-            children: [
-              Icon(
-                Icons.tune,
-                size: 24,
-                color: theme.primaryColor,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                '显示设置',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-        
-        // 实时预览
-        Consumer<ThemeProvider>(
-          builder: (context, themeProvider, child) {
-            return _PreviewCard(themeProvider: themeProvider);
-          }
-        ),
-        
-        const SizedBox(height: 20),
-        
-        // 头像尺寸设置
-        Consumer<ThemeProvider>(
-          builder: (context, themeProvider, child) {
-            return _SizeControlCard(
-              title: '头像尺寸',
-              icon: Icons.account_circle,
-              currentValue: themeProvider.avatarSize,
-              min: 10,
-              max: 40,
-              onChanged: (value) => themeProvider.setAvatarSize(value),
-              themeProvider: themeProvider,
-            );
-          }
-        ),
-        
-        const SizedBox(height: 20),
-        
-        // 字体尺寸设置
-        Consumer<ThemeProvider>(
-          builder: (context, themeProvider, child) {
-            return _SizeControlCard(
-              title: '代码字体大小',
-              icon: Icons.text_fields,
-              currentValue: themeProvider.codeFontSize,
-              min: 16,
-              max: 32,
-              onChanged: (value) => themeProvider.setCodeFontSize(value),
-              themeProvider: themeProvider,
-            );
-          }
-        ),
-      ],
-    );
-  }
-}
-
-// 主题设置部分
-class _ThemeSettingsSection extends StatelessWidget {
-  final ThemeProvider themeProvider;
-
-  const _ThemeSettingsSection({
-    required this.themeProvider,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 标题
-        Padding(
-          padding: const EdgeInsets.only(bottom: 20),
-          child: Row(
-            children: [
-              Icon(
-                Icons.brightness_medium,
-                size: 24,
-                color: theme.primaryColor,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                '主题模式',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-        
-        // 主题模式选择
-        Column(
-          children: [
-            Consumer<ThemeProvider>(
-              builder: (context, themeProvider, child) {
-                return _ThemeModeOption(
-                  mode: ThemeMode.light,
-                  title: '浅色模式',
-                  description: '明亮舒适的界面',
-                  icon: Icons.light_mode,
-                  currentMode: themeProvider.themeMode,
-                  onTap: () => themeProvider.setThemeMode(ThemeMode.light),
-                );
-              }
-            ),
-            const SizedBox(height: 12),
-            Consumer<ThemeProvider>(
-              builder: (context, themeProvider, child) {
-                return _ThemeModeOption(
-                  mode: ThemeMode.dark,
-                  title: '深色模式',
-                  description: '护眼舒适的界面',
-                  icon: Icons.dark_mode,
-                  currentMode: themeProvider.themeMode,
-                  onTap: () => themeProvider.setThemeMode(ThemeMode.dark),
-                );
-              }
-            ),
-            const SizedBox(height: 12),
-            Consumer<ThemeProvider>(
-              builder: (context, themeProvider, child) {
-                return _ThemeModeOption(
-                  mode: ThemeMode.system,
-                  title: '跟随系统',
-                  description: '自动匹配系统主题',
-                  icon: Icons.brightness_auto,
-                  currentMode: themeProvider.themeMode,
-                  onTap: () => themeProvider.setThemeMode(ThemeMode.system),
-                );
-              }
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-// 尺寸控制卡片
-class _SizeControlCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final double currentValue;
-  final double min;
-  final double max;
-  final Function(double) onChanged;
-  final ThemeProvider themeProvider;
-
-  const _SizeControlCard({
-    required this.title,
-    required this.icon,
-    required this.currentValue,
-    required this.min,
-    required this.max,
-    required this.onChanged,
-    required this.themeProvider,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Card(
-      elevation: 0.5,
-      shape: RoundedRectangleBorder(
+  Widget _buildWeChatSettingsGroup(
+    BuildContext context, {
+    required String title,
+    required List<Widget> children,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: theme.dividerColor.withValues(alpha: 0.1),
-          width: 0.5,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Colors.grey,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThemeOption(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+    bool showDivider = true,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            border: showDivider
+                ? const Border(
+                    bottom: BorderSide(
+                      color: Color(0xFFE5E5E5),
+                      width: 0.5,
+                    ),
+                  )
+                : null,
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                color: const Color(0xFF07C160),
+                size: 22,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (isSelected)
+                const Icon(
+                  Icons.check,
+                  color: Color(0xFF07C160),
+                  size: 20,
+                ),
+            ],
+          ),
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
+    );
+  }
+
+  Widget _buildColorOption(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    Color? color,
+    required VoidCallback onTap,
+    bool showDivider = true,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            border: showDivider
+                ? const Border(
+                    bottom: BorderSide(
+                      color: Color(0xFFE5E5E5),
+                      width: 0.5,
+                    ),
+                  )
+                : null,
+          ),
+          child: Row(
+            children: [
+              if (color != null)
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.grey.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                )
+              else
+                const Icon(
+                  Icons.refresh,
+                  color: Color(0xFF07C160),
+                  size: 24,
+                ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(icon, size: 20, color: themeProvider.primaryColor),
-                    const SizedBox(width: 12),
                     Text(
                       title,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey,
                       ),
                     ),
                   ],
                 ),
-                Text(
-                  '${currentValue.round()}px',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: themeProvider.primaryColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            // 滑块控制
-            Slider(
-              value: currentValue,
-              min: min,
-              max: max,
-              divisions: (max - min).round(),
-              onChanged: onChanged,
-              activeColor: themeProvider.primaryColor,
-            ),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('小', style: theme.textTheme.bodySmall),
-                Text('大', style: theme.textTheme.bodySmall),
-              ],
-            ),
-          ],
+              ),
+              const Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.grey,
+                size: 12,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
-}
 
-// 主题模式选项
-class _ThemeModeOption extends StatelessWidget {
-  final ThemeMode mode;
-  final String title;
-  final String description;
-  final IconData icon;
-  final ThemeMode currentMode;
-  final VoidCallback onTap;
-
-  const _ThemeModeOption({
-    required this.mode,
-    required this.title,
-    required this.description,
-    required this.icon,
-    required this.currentMode,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isSelected = currentMode == mode;
-
-    return Card(
-      elevation: 0.5,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: theme.dividerColor.withValues(alpha: 0.1),
-          width: 0.5,
-        ),
-      ),
-      color: isSelected
-          ? theme.primaryColor.withValues(alpha: 0.1)
-          : theme.cardColor,
-      child: ListTile(
-        leading: Icon(
-          icon,
-          size: 28,
-          color: isSelected
-              ? theme.primaryColor
-              : theme.textTheme.bodyMedium?.color,
-        ),
-        title: Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: isSelected ? theme.primaryColor : null,
-          ),
-        ),
-        subtitle: Text(
-          description,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: isSelected
-                ? theme.primaryColor.withValues(alpha: 0.8)
-                : null,
-          ),
-        ),
-        trailing: isSelected
-            ? Icon(Icons.check_circle, color: theme.primaryColor)
+  Widget _buildSliderOption(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required double value,
+    required double min,
+    required double max,
+    required ValueChanged<double> onChanged,
+    bool showDivider = true,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: showDivider
+            ? const Border(
+                bottom: BorderSide(
+                  color: Color(0xFFE5E5E5),
+                  width: 0.5,
+                ),
+              )
             : null,
-        onTap: onTap,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                value.round().toString(),
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF07C160),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Slider(
+            value: value,
+            min: min,
+            max: max,
+            activeColor: const Color(0xFF07C160),
+            inactiveColor: const Color(0xFF07C160).withValues(alpha: 0.2),
+            onChanged: onChanged,
+          ),
+        ],
       ),
     );
   }
-}
 
-// 预览卡片
-class _PreviewCard extends StatelessWidget {
-  final ThemeProvider themeProvider;
-
-  const _PreviewCard({
-    required this.themeProvider,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final previewAvatarSize = themeProvider.avatarSize.clamp(10.0, 40.0);
-    final remainingTime = 15; // 固定显示15秒倒计时
-    
-    return Card(
-      elevation: 0.5,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: theme.dividerColor.withValues(alpha: 0.1),
-          width: 0.5,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.visibility,
-                  size: 20,
-                  color: theme.primaryColor,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  '实时预览',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+  void _showColorPicker(BuildContext context, ThemeProvider themeProvider) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('选择主题颜色'),
+          content: SizedBox(
+            width: 300,
+            height: 200,
+            child: ColorPicker(
+              selectedColor: themeProvider.primaryColor,
+              onColorChanged: (color) {
+                themeProvider.setPrimaryColor(color);
+              },
             ),
-            
-            const SizedBox(height: 16),
-            
-            // 预览内容 - 使用与首页相同的验证码卡片样式
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: theme.cardColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  // 显示带倒计时跑道的发行方图标
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // 圆形进度条背景
-                      SizedBox(
-                        width: previewAvatarSize * 2,
-                        height: previewAvatarSize * 2,
-                        child: CircularProgressIndicator(
-                          value: 1.0,
-                          strokeWidth: 3,
-                          backgroundColor: Colors.grey.withValues(alpha: 0.3),
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.transparent),
-                        ),
-                      ),
-                      // 圆形进度条（倒计时）
-                      SizedBox(
-                        width: previewAvatarSize * 2,
-                        height: previewAvatarSize * 2,
-                        child: CircularProgressIndicator(
-                          value: (30 - remainingTime) / 30,
-                          strokeWidth: 3,
-                          backgroundColor: Colors.transparent,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            remainingTime <= 5 ? Colors.red : theme.primaryColor
-                          ),
-                        ),
-                      ),
-                      // 中间的头像或默认图标
-                      SizedBox(
-                        width: previewAvatarSize,
-                        height: previewAvatarSize,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: theme.primaryColor.withValues(alpha: 0.1),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'A',
-                              style: TextStyle(
-                                fontSize: previewAvatarSize * 0.6,
-                                fontWeight: FontWeight.bold,
-                                color: theme.primaryColor,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 12),
-                  // 中间信息区域
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '预览账户',
-                          style: theme.textTheme.titleMedium,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          'authx@example.com',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.textTheme.bodySmall?.color,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  // 验证码和倒计时区域
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '123456',
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontFamily: 'monospace',
-                          fontWeight: FontWeight.bold,
-                          fontSize: themeProvider.codeFontSize,
-                          letterSpacing: 2,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: (remainingTime <= 5 
-                              ? Colors.red 
-                              : theme.primaryColor).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '${remainingTime}s',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: remainingTime <= 5 ? Colors.red : theme.primaryColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('完成'),
             ),
           ],
-        ),
+        );
+      },
+    );
+  }
+
+  void _resetColors(ThemeProvider themeProvider) {
+    themeProvider.setPrimaryColor(Colors.green);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('颜色已重置为默认值'),
+        backgroundColor: Color(0xFF07C160),
       ),
     );
   }

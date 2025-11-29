@@ -93,6 +93,17 @@ class TotpProvider with ChangeNotifier {
     }
     return 0;
   }
+
+  /// 清除所有条目
+  Future<void> clearAllEntries() async {
+    try {
+      _entries.clear();
+      await _storageService.saveEntries(_entries);
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
 }
 
 extension on Iterable<TotpEntry> {

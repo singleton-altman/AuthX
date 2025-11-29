@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:authx/providers/totp_provider.dart';
-
 
 class SecuritySettingsScreen extends StatelessWidget {
   const SecuritySettingsScreen({super.key});
@@ -11,262 +11,263 @@ class SecuritySettingsScreen extends StatelessWidget {
     final totpProvider = Provider.of<TotpProvider>(context);
     
     return Scaffold(
-      appBar: AppBar(title: const Text('安全设置')),
+      backgroundColor: const Color(0xFFF7F7F7),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF07C160),
+        elevation: 0,
+        title: const Text(
+          '安全设置',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+        ),
+      ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 20),
         children: [
           // 应用锁定
-          _buildSettingsSection(
+          _buildWeChatSettingsGroup(
             context,
             title: '应用锁定',
-            icon: Icons.lock_outline,
-            children: _buildAppLockSettings(context),
+            children: [
+              _buildWeChatSettingsItem(
+                context,
+                icon: Icons.lock,
+                title: '应用锁定密码',
+                subtitle: '设置应用启动密码',
+                onTap: () {
+                  // TODO: 实现应用锁定密码设置
+                },
+              ),
+              _buildWeChatSettingsItem(
+                context,
+                icon: Icons.fingerprint,
+                title: '生物识别',
+                subtitle: '使用指纹或面部识别',
+                onTap: () {
+                  // TODO: 实现生物识别设置
+                },
+                showDivider: false,
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
+          
+          const SizedBox(height: 20),
           
           // 数据保护
-          _buildSettingsSection(
+          _buildWeChatSettingsGroup(
             context,
             title: '数据保护',
-            icon: Icons.security_outlined,
-            children: _buildDataProtectionSettings(context, totpProvider),
+            children: [
+              _buildWeChatSettingsItem(
+                context,
+                icon: Icons.enhanced_encryption,
+                title: '数据加密',
+                subtitle: '使用设备级加密存储',
+                onTap: () {
+                  // TODO: 实现数据加密设置
+                },
+              ),
+              _buildWeChatSettingsItem(
+                context,
+                icon: Icons.timer,
+                title: '自动锁定',
+                subtitle: '应用在后台时自动锁定',
+                onTap: () {
+                  // TODO: 实现自动锁定设置
+                },
+                showDivider: false,
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
+          
+          const SizedBox(height: 20),
           
           // 导出与备份
-          _buildSettingsSection(
+          _buildWeChatSettingsGroup(
             context,
             title: '导出与备份',
-            icon: Icons.backup_outlined,
-            children: _buildBackupSettings(context, totpProvider),
+            children: [
+              _buildWeChatSettingsItem(
+                context,
+                icon: Icons.download,
+                title: '导出数据',
+                subtitle: '导出所有验证器数据',
+                onTap: () {
+                  // TODO: 实现数据导出
+                },
+              ),
+              _buildWeChatSettingsItem(
+                context,
+                icon: Icons.upload,
+                title: '导入数据',
+                subtitle: '从备份文件导入数据',
+                onTap: () {
+                  // TODO: 实现数据导入
+                },
+                showDivider: false,
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
+          
+          const SizedBox(height: 20),
           
           // 隐私设置
-          _buildSettingsSection(
+          _buildWeChatSettingsGroup(
             context,
             title: '隐私设置',
-            icon: Icons.privacy_tip_outlined,
-            children: _buildPrivacySettings(context),
+            children: [
+              _buildWeChatSettingsItem(
+                context,
+                icon: Icons.visibility_off,
+                title: '隐藏验证码',
+                subtitle: '默认隐藏验证码数字',
+                onTap: () {
+                  // TODO: 实现隐藏验证码设置
+                },
+              ),
+              _buildWeChatSettingsItem(
+                context,
+                icon: Icons.screenshot,
+                title: '防止截图',
+                subtitle: '禁止在此页面截图',
+                onTap: () {
+                  // TODO: 实现防截图设置
+                },
+                showDivider: false,
+              ),
+            ],
           ),
+          
+          const SizedBox(height: 20),
+          
+          // 危险操作
+          _buildWeChatSettingsGroup(
+            context,
+            title: '危险操作',
+            children: [
+              _buildWeChatSettingsItem(
+                context,
+                icon: Icons.delete_forever,
+                title: '清除所有数据',
+                subtitle: '删除所有验证器和设置',
+                onTap: () => _showClearDataDialog(context, totpProvider),
+                showDivider: false,
+                isDanger: true,
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 40),
         ],
       ),
     );
   }
 
-  Widget _buildSettingsSection(
+  Widget _buildWeChatSettingsGroup(
     BuildContext context, {
     required String title,
-    required IconData icon,
     required List<Widget> children,
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
-          width: 1,
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 标题栏
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Icon(
-                  icon,
-                  size: 20,
-                  color: Theme.of(context).primaryColor,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Colors.grey,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-          // 设置项
           ...children,
         ],
       ),
     );
   }
 
-  List<Widget> _buildAppLockSettings(BuildContext context) {
-    return [
-      _buildSettingItem(
-        context,
-        title: '启用应用锁定',
-        subtitle: '需要密码或生物识别才能访问应用',
-        trailing: Switch(
-          value: false, // 需要实现实际的存储逻辑
-          onChanged: (value) {
-            // 实现应用锁定逻辑
-            _showAppLockSetupDialog(context, value);
-          },
-        ),
-      ),
-      _buildSettingItem(
-        context,
-        title: '锁定超时时间',
-        subtitle: '应用在后台运行多久后自动锁定',
-        trailing: Text(
-          '立即锁定',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
-          ),
-        ),
-        onTap: () => _showLockTimeoutDialog(context),
-      ),
-    ];
-  }
-
-  List<Widget> _buildDataProtectionSettings(BuildContext context, TotpProvider totpProvider) {
-    return [
-      _buildSettingItem(
-        context,
-        title: '数据加密',
-        subtitle: '使用AES-256加密存储敏感数据',
-        trailing: const Icon(Icons.verified_user_outlined, color: Colors.green),
-      ),
-      _buildSettingItem(
-        context,
-        title: '自动清除剪贴板',
-        subtitle: '复制验证码后30秒自动清除',
-        trailing: Switch(
-          value: true, // 需要实现实际的存储逻辑
-          onChanged: (value) {
-            // 实现剪贴板自动清除逻辑
-          },
-        ),
-      ),
-      _buildSettingItem(
-        context,
-        title: '屏幕截图保护',
-        subtitle: '防止应用内容被截图',
-        trailing: Switch(
-          value: false, // 需要实现实际的存储逻辑
-          onChanged: (value) {
-            // 实现屏幕截图保护逻辑
-          },
-        ),
-      ),
-    ];
-  }
-
-  List<Widget> _buildBackupSettings(BuildContext context, TotpProvider totpProvider) {
-    return [
-      _buildSettingItem(
-        context,
-        title: '自动备份',
-        subtitle: '定期自动备份数据到安全位置',
-        trailing: Switch(
-          value: false, // 需要实现实际的存储逻辑
-          onChanged: (value) {
-            // 实现自动备份逻辑
-          },
-        ),
-      ),
-      _buildSettingItem(
-        context,
-        title: '导出数据',
-        subtitle: '导出所有2FA数据到加密文件',
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () {
-          // 导航到导出页面
-          Navigator.pushNamed(context, '/export');
-        },
-      ),
-      _buildSettingItem(
-        context,
-        title: '导入数据',
-        subtitle: '从备份文件导入2FA数据',
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () {
-          // 导航到导入页面
-          Navigator.pushNamed(context, '/import');
-        },
-      ),
-    ];
-  }
-
-  List<Widget> _buildPrivacySettings(BuildContext context) {
-    return [
-      _buildSettingItem(
-        context,
-        title: '匿名使用统计',
-        subtitle: '帮助改进应用（不包含个人数据）',
-        trailing: Switch(
-          value: true, // 需要实现实际的存储逻辑
-          onChanged: (value) {
-            // 实现使用统计逻辑
-          },
-        ),
-      ),
-      _buildSettingItem(
-        context,
-        title: '清除所有数据',
-        subtitle: '永久删除所有2FA数据和设置',
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () => _showClearDataDialog(context),
-      ),
-    ];
-  }
-
-  Widget _buildSettingItem(
+  Widget _buildWeChatSettingsItem(
     BuildContext context, {
+    required IconData icon,
     required String title,
     required String subtitle,
-    required Widget trailing,
-    VoidCallback? onTap,
+    required VoidCallback onTap,
+    bool showDivider = true,
+    bool isDanger = false,
   }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(
-                color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
-                width: 1,
-              ),
-            ),
+            border: showDivider
+                ? const Border(
+                    bottom: BorderSide(
+                      color: Color(0xFFE5E5E5),
+                      width: 0.5,
+                    ),
+                  )
+                : null,
           ),
           child: Row(
             children: [
+              Icon(
+                icon,
+                color: isDanger ? Colors.red : const Color(0xFF07C160),
+                size: 22,
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: isDanger ? Colors.red : Colors.black87,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                      style: const TextStyle(
                         fontSize: 13,
+                        color: Colors.grey,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              trailing,
+              const Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.grey,
+                size: 12,
+              ),
             ],
           ),
         ),
@@ -274,72 +275,49 @@ class SecuritySettingsScreen extends StatelessWidget {
     );
   }
 
-  void _showAppLockSetupDialog(BuildContext context, bool enable) {
+  void _showClearDataDialog(BuildContext context, TotpProvider totpProvider) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text(enable ? '设置应用锁定' : '禁用应用锁定'),
-          content: Text(
-            enable 
-              ? '请设置应用锁定密码。您可以使用数字密码或生物识别（如指纹/面容ID）。'
-              : '禁用应用锁定后，任何人都可以直接访问您的2FA数据。确定要禁用吗？',
+          title: const Text('清除所有数据'),
+          content: const Text(
+            '此操作将删除所有验证器和设置，且无法撤销。\n\n确定要继续吗？',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('取消'),
             ),
-            TextButton(
-              onPressed: () {
-                // 实现应用锁定设置逻辑
+            ElevatedButton(
+              onPressed: () async {
                 Navigator.of(context).pop();
+                try {
+                  await totpProvider.clearAllEntries();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('所有数据已清除'),
+                        backgroundColor: Color(0xFF07C160),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('清除失败: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
               },
-              child: Text(enable ? '设置' : '禁用'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showLockTimeoutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('锁定超时时间'),
-          content: const Text('选择应用在后台运行多久后自动锁定：'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('取消'),
-            ),
-            // 可以添加更多选项
-          ],
-        );
-      },
-    );
-  }
-
-  void _showClearDataDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('清除所有数据'),
-          content: const Text('此操作将永久删除所有2FA数据和设置，且无法恢复。确定要继续吗？'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('取消'),
-            ),
-            TextButton(
-              onPressed: () {
-                // 实现数据清除逻辑
-                Navigator.of(context).pop();
-              },
-              child: const Text('清除'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('确定清除'),
             ),
           ],
         );
