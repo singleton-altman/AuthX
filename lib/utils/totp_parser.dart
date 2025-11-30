@@ -1,4 +1,3 @@
-
 import 'package:authx/models/totp_entry.dart';
 
 class TotpParseResult {
@@ -53,24 +52,24 @@ class TotpParser {
     final String secret = queryParameters['secret']!;
 
     // 解析可选参数
-    final int digits = queryParameters.containsKey('digits') 
-        ? int.parse(queryParameters['digits']!) 
+    final int digits = queryParameters.containsKey('digits')
+        ? int.parse(queryParameters['digits']!)
         : 6;
-        
-    final String algorithm = queryParameters.containsKey('algorithm') 
-        ? queryParameters['algorithm']!.toUpperCase() 
+
+    final String algorithm = queryParameters.containsKey('algorithm')
+        ? queryParameters['algorithm']!.toUpperCase()
         : 'SHA1';
-        
-    final int period = queryParameters.containsKey('period') 
-        ? int.parse(queryParameters['period']!) 
+
+    final int period = queryParameters.containsKey('period')
+        ? int.parse(queryParameters['period']!)
         : 30;
-        
-    final String icon = queryParameters.containsKey('icon') 
-        ? queryParameters['icon']! 
+
+    final String icon = queryParameters.containsKey('icon')
+        ? queryParameters['icon']!
         : ''; // 解析图标参数
-        
-    final String tag = queryParameters.containsKey('tag') 
-        ? queryParameters['tag']! 
+
+    final String tag = queryParameters.containsKey('tag')
+        ? queryParameters['tag']!
         : ''; // 解析标签参数
 
     // 验证参数
@@ -102,7 +101,9 @@ class TotpParser {
     final Uri uri = Uri(
       scheme: 'otpauth',
       host: 'totp',
-      path: entry.issuer.isNotEmpty ? '${entry.issuer}:${entry.name}' : entry.name,
+      path: entry.issuer.isNotEmpty
+          ? '${entry.issuer}:${entry.name}'
+          : entry.name,
       queryParameters: {
         'secret': entry.secret,
         'issuer': entry.issuer,
@@ -113,7 +114,27 @@ class TotpParser {
         if (entry.tags.isNotEmpty) 'tag': entry.tags.join(','), // 添加标签参数
       },
     );
-    
+
+    return uri.toString();
+  }
+
+  /// 生成标准 TOTP URL（不包含图标和标签信息）
+  static String toStandardUri(TotpEntry entry) {
+    final Uri uri = Uri(
+      scheme: 'otpauth',
+      host: 'totp',
+      path: entry.issuer.isNotEmpty
+          ? '${entry.issuer}:${entry.name}'
+          : entry.name,
+      queryParameters: {
+        'secret': entry.secret,
+        'issuer': entry.issuer,
+        'digits': entry.digits.toString(),
+        'algorithm': entry.algorithm,
+        'period': entry.period.toString(),
+      },
+    );
+
     return uri.toString();
   }
 }

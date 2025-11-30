@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:provider/provider.dart';
+import 'dart:convert';
 import '../../models/totp_entry.dart';
 import '../../providers/totp_provider.dart';
 import '../../utils/totp_parser.dart';
@@ -52,7 +53,9 @@ class _ExportScreenState extends State<ExportScreen> {
   }
 
   void _copyAllUrls(List<TotpEntry> entries) {
-    final urls = entries.map((entry) => TotpParser.toUri(entry)).join('\n');
+    final urls = entries
+        .map((entry) => TotpParser.toStandardUri(entry))
+        .join('\n');
     Clipboard.setData(ClipboardData(text: urls));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -67,7 +70,9 @@ class _ExportScreenState extends State<ExportScreen> {
   }
 
   void _generateQrCode(List<TotpEntry> entries) {
-    final urls = entries.map((entry) => TotpParser.toUri(entry)).join('\n');
+    final urls = entries
+        .map((entry) => TotpParser.toStandardUri(entry))
+        .join('\n');
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -83,6 +88,178 @@ class _ExportScreenState extends State<ExportScreen> {
             child: const Text('关闭'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildEntryIcon(TotpEntry entry) {
+    if (entry.icon.isNotEmpty) {
+      // 检查是否是base64图片
+      if (entry.icon.startsWith('data:image/')) {
+        try {
+          // 处理base64图片
+          final base64String = entry.icon.split(',').last;
+          final imageBytes = const Base64Decoder().convert(base64String);
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.memory(
+              imageBytes,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+              errorBuilder: (context, error, stackTrace) {
+                return _buildFallbackIcon(entry);
+              },
+            ),
+          );
+        } catch (e) {
+          return _buildFallbackIcon(entry);
+        }
+      } else {
+        // 处理网络图片
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Image.network(
+            entry.icon,
+            fit: BoxFit.cover,
+            gaplessPlayback: true,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildFallbackIcon(entry);
+            },
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(child: CircularProgressIndicator(strokeWidth: 2));
+            },
+          ),
+        );
+      }
+    } else {
+      return _buildFallbackIcon(entry);
+    }
+  }
+
+  Widget _buildFallbackIcon(TotpEntry entry) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final avatarText = _getAvatarText(entry.issuer);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Center(
+        child: Text(
+          avatarText,
+          style: TextStyle(
+            color: colorScheme.primary,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _getAvatarText(String issuer) {
+    if (issuer.isEmpty) return '?';
+
+    // 取前两个字符，如果是英文取首字母
+    if (RegExp(r'^[a-zA-Z]').hasMatch(issuer)) {
+      return issuer.substring(0, 1).toUpperCase();
+    } else {
+      return issuer.length >= 2 ? issuer.substring(0, 2) : issuer;
+    }
+  }
+
+  // 构建详细信息对话框
+  Widget _buildDetailDialog(TotpEntry entry, ColorScheme colorScheme) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '详细信息',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 20),
+            _buildDetailRow('账户', entry.name, colorScheme),
+            const SizedBox(height: 12),
+            _buildDetailRow('发行方', entry.issuer, colorScheme),
+            const SizedBox(height: 12),
+            _buildDetailRow('密钥', entry.secret, colorScheme),
+            const SizedBox(height: 12),
+            _buildDetailRow('算法', entry.algorithm, colorScheme),
+            const SizedBox(height: 12),
+            _buildDetailRow('位数', entry.digits.toString(), colorScheme),
+            const SizedBox(height: 12),
+            _buildDetailRow('周期', '${entry.period}秒', colorScheme),
+            const SizedBox(height: 20),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('关闭'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 构建二维码对话框
+  Widget _buildQrDialog(
+    TotpEntry entry,
+    String totpUrl,
+    ColorScheme colorScheme,
+  ) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${entry.name} 二维码',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 20),
+            // 二维码容器，提供固定尺寸避免溢出
+            Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: QrImageView(
+                data: totpUrl,
+                version: QrVersions.auto,
+                size: 200,
+                backgroundColor: Colors.white,
+                errorCorrectionLevel: QrErrorCorrectLevel.L,
+              ),
+            ),
+            const SizedBox(height: 20),
+            FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('关闭'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -122,10 +299,31 @@ class _ExportScreenState extends State<ExportScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('导出数据'),
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        title: Text(
+          '导出数据',
+          style: TextStyle(
+            color: colorScheme.onSurface,
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: colorScheme.onSurface,
+            size: 20,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         actions: [
           IconButton(
             icon: _showSecrets
@@ -151,17 +349,17 @@ class _ExportScreenState extends State<ExportScreen> {
                   SnackBar(
                     content: const Text('已添加演示数据'),
                     behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppTheme.borderRadius,
-                      ),
-                    ),
                   ),
                 );
               },
               tooltip: '添加演示数据',
             ),
         ],
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        ),
       ),
       body: Consumer<TotpProvider>(
         builder: (context, provider, child) {
@@ -175,14 +373,14 @@ class _ExportScreenState extends State<ExportScreen> {
                   Icon(
                     Icons.inbox_outlined,
                     size: 64,
-                    color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    color: colorScheme.onSurface.withValues(alpha: 0.3),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     '暂无TOTP条目',
                     style: TextStyle(
-                      fontSize: 18,
-                      color: colorScheme.onSurface.withValues(alpha: 0.7),
+                      fontSize: 16,
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -194,7 +392,7 @@ class _ExportScreenState extends State<ExportScreen> {
             children: [
               // 搜索栏
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(16),
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
@@ -214,9 +412,7 @@ class _ExportScreenState extends State<ExportScreen> {
                     filled: true,
                     fillColor: colorScheme.surfaceContainerHighest,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppTheme.borderRadius,
-                      ),
+                      borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
                   ),
@@ -237,14 +433,12 @@ class _ExportScreenState extends State<ExportScreen> {
                       Expanded(
                         child: FilledButton.icon(
                           onPressed: () => _generateQrCode(entries),
-                          icon: const Icon(Icons.qr_code),
+                          icon: const Icon(Icons.qr_code, size: 18),
                           label: const Text('生成二维码'),
                           style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppTheme.borderRadius,
-                              ),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
                         ),
@@ -253,14 +447,12 @@ class _ExportScreenState extends State<ExportScreen> {
                       Expanded(
                         child: FilledButton.icon(
                           onPressed: () => _copyAllUrls(entries),
-                          icon: const Icon(Icons.copy_all),
+                          icon: const Icon(Icons.copy_all, size: 18),
                           label: Text('复制全部 (${entries.length})'),
                           style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppTheme.borderRadius,
-                              ),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
                         ),
@@ -269,7 +461,7 @@ class _ExportScreenState extends State<ExportScreen> {
                   ),
                 ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // 条目列表
               Expanded(
@@ -281,14 +473,18 @@ class _ExportScreenState extends State<ExportScreen> {
                             Icon(
                               Icons.search_off,
                               size: 64,
-                              color: colorScheme.onSurface.withValues(alpha: 0.5),
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.3,
+                              ),
                             ),
                             const SizedBox(height: 16),
                             Text(
                               '未找到匹配的条目',
                               style: TextStyle(
-                                fontSize: 18,
-                                color: colorScheme.onSurface.withValues(alpha: 0.7),
+                                fontSize: 16,
+                                color: colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
+                                ),
                               ),
                             ),
                           ],
@@ -299,181 +495,207 @@ class _ExportScreenState extends State<ExportScreen> {
                         itemCount: entries.length,
                         itemBuilder: (context, index) {
                           final entry = entries[index];
-                          final totpUrl = TotpParser.toUri(entry);
+                          final standardUrl = TotpParser.toStandardUri(entry);
+                          final fullUrl = TotpParser.toUri(entry);
 
-                          return Card(
+                          return Container(
                             margin: const EdgeInsets.only(bottom: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppTheme.borderRadius,
+                            decoration: BoxDecoration(
+                              color: colorScheme.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: colorScheme.outline.withValues(
+                                  alpha: 0.1,
+                                ),
+                                width: 1,
                               ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(
+                                    alpha: isDark ? 0.2 : 0.05,
+                                  ),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                            elevation: 0,
-                            color: colorScheme.surfaceContainerHighest,
-                            child: ExpansionTile(
-                              leading: CircleAvatar(
-                                backgroundColor: colorScheme.primary
-                                    .withValues(alpha: 0.1),
-                                child: Text(
-                                  entry.name.isNotEmpty
-                                      ? entry.name[0].toUpperCase()
-                                      : '?',
-                                  style: TextStyle(
-                                    color: colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // 头部 - 标题和发行方
+                                Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Row(
+                                    children: [
+                                      // 图标
+                                      SizedBox(
+                                        width: 50,
+                                        height: 50,
+                                        child: _buildEntryIcon(entry),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              entry.name,
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                                color: colorScheme.onSurface,
+                                              ),
+                                            ),
+                                            if (entry.issuer.isNotEmpty)
+                                              Text(
+                                                entry.issuer,
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  color: colorScheme.onSurface
+                                                      .withValues(alpha: 0.6),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ),
-                              title: Text(
-                                entry.name,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: colorScheme.onSurface,
+
+                                // TOTP URL 部分已移除，直接通过按钮操作
+
+                                // 操作按钮 - 三个按钮平分卡片底部
+                                Divider(
+                                  height: 1,
+                                  thickness: 1,
+                                  color: colorScheme.outline.withValues(
+                                    alpha: 0.1,
+                                  ),
                                 ),
-                              ),
-                              subtitle: entry.issuer.isNotEmpty
-                                  ? Text(
-                                      entry.issuer,
-                                      style: TextStyle(
-                                        color: colorScheme.onSurface
-                                            .withValues(alpha: 0.6),
-                                      ),
-                                    )
-                                  : null,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                SizedBox(
+                                  height: 48,
+                                  child: Row(
                                     children: [
-                                      // TOTP URL
-                                      Text(
-                                        'TOTP URL:',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                          color: colorScheme.onSurface,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Container(
-                                        width: double.infinity,
-                                        padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          color: colorScheme.surface,
-                                          borderRadius: BorderRadius.circular(
-                                            AppTheme.borderRadius,
-                                          ),
-                                        ),
-                                        child: SelectableText(
-                                          totpUrl,
-                                          style: TextStyle(
-                                            fontFamily: 'monospace',
-                                            fontSize: 12,
-                                            color: colorScheme.onSurface,
-                                          ),
-                                        ),
-                                      ),
-
-                                      // 详细信息
-                                      if (_showSecrets) ...[
-                                        const SizedBox(height: 16),
-                                        _buildDetailRow(
-                                          '密钥',
-                                          entry.secret,
-                                          colorScheme,
-                                        ),
-                                        _buildDetailRow(
-                                          '算法',
-                                          entry.algorithm,
-                                          colorScheme,
-                                        ),
-                                        _buildDetailRow(
-                                          '位数',
-                                          entry.digits.toString(),
-                                          colorScheme,
-                                        ),
-                                        _buildDetailRow(
-                                          '周期',
-                                          '${entry.period}秒',
-                                          colorScheme,
-                                        ),
-                                      ],
-
-                                      const SizedBox(height: 16),
-
-                                      // 操作按钮
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        children: [
-                                          FilledButton.icon(
-                                            onPressed: () {
+                                      // 详细按钮
+                                      Expanded(
+                                        child: Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            onTap: () {
                                               showDialog(
                                                 context: context,
                                                 builder: (context) =>
-                                                    AlertDialog(
-                                                      title: Text(
-                                                        '${entry.name} 二维码',
-                                                      ),
-                                                      content: SizedBox(
-                                                        width: 200,
-                                                        height: 200,
-                                                        child: QrImageView(
-                                                          data: totpUrl,
-                                                          version:
-                                                              QrVersions.auto,
-                                                          size: 200,
-                                                        ),
-                                                      ),
-                                                      actions: [
-                                                        TextButton(
-                                                          onPressed: () =>
-                                                              Navigator.pop(
-                                                                context,
-                                                              ),
-                                                          child: const Text(
-                                                            '关闭',
-                                                          ),
-                                                        ),
-                                                      ],
+                                                    _buildDetailDialog(
+                                                      entry,
+                                                      colorScheme,
                                                     ),
                                               );
                                             },
-                                            icon: const Icon(
-                                              Icons.qr_code,
-                                              size: 16,
-                                            ),
-                                            label: const Text('二维码'),
-                                            style: FilledButton.styleFrom(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 12,
-                                                    vertical: 8,
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons.info_outline,
+                                                  color: colorScheme.primary,
+                                                  size: 20,
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  '详细',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: colorScheme.primary,
                                                   ),
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                          const SizedBox(width: 8),
-                                          FilledButton.icon(
-                                            onPressed: () => _copyToClipboard(
-                                              totpUrl,
+                                        ),
+                                      ),
+                                      // 分隔线
+                                      Container(
+                                        width: 1,
+                                        color: colorScheme.outline.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                      ),
+                                      // 复制按钮
+                                      Expanded(
+                                        child: Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            onTap: () => _copyToClipboard(
+                                              fullUrl,
                                               '${entry.name} URL',
                                             ),
-                                            icon: const Icon(
-                                              Icons.copy,
-                                              size: 16,
-                                            ),
-                                            label: const Text('复制URL'),
-                                            style: FilledButton.styleFrom(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 12,
-                                                    vertical: 8,
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons.copy,
+                                                  color: colorScheme.primary,
+                                                  size: 20,
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  '复制',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: colorScheme.primary,
                                                   ),
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                        ],
+                                        ),
+                                      ),
+                                      // 分隔线
+                                      Container(
+                                        width: 1,
+                                        color: colorScheme.outline.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                      ),
+                                      // 二维码按钮
+                                      Expanded(
+                                        child: Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            onTap: () {
+                                              showDialog(
+                                                context: context,
+                                                builder: (context) =>
+                                                    _buildQrDialog(
+                                                      entry,
+                                                      standardUrl,
+                                                      colorScheme,
+                                                    ),
+                                              );
+                                            },
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons.qr_code,
+                                                  color: colorScheme.primary,
+                                                  size: 20,
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  '二维码',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: colorScheme.primary,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:authx/providers/totp_provider.dart';
 import 'package:authx/ui/screens/export_screen.dart';
@@ -9,503 +10,378 @@ class BackupRestoreScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final totpProvider = Provider.of<TotpProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('备份与恢复')),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        title: Text(
+          '备份与恢复',
+          style: TextStyle(
+            color: theme.colorScheme.onSurface,
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: theme.colorScheme.onSurface,
+            size: 20,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // 备份概览
+              _buildOverviewCard(context, totpProvider),
+              
+              const SizedBox(height: 24),
+              
+              // 手动操作
+              _buildSettingsCard(context, title: '手动操作', children: [
+                _buildSettingsItem(
+                  context,
+                  icon: Icons.download_outlined,
+                  title: '导出数据',
+                  subtitle: '将所有验证器导出为文件',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ExportScreen()),
+                    );
+                  },
+                ),
+                _buildSettingsItem(
+                  context,
+                  icon: Icons.upload_outlined,
+                  title: '导入数据',
+                  subtitle: '从备份文件恢复验证器',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SimpleImportScreen()),
+                    );
+                  },
+                  showDivider: false,
+                ),
+              ]),
+              
+              const SizedBox(height: 24),
+              
+              // 自动备份
+              _buildSettingsCard(context, title: '自动备份', children: [
+                _buildSettingsItem(
+                  context,
+                  icon: Icons.schedule_outlined,
+                  title: '定期备份',
+                  subtitle: '每周自动备份到本地存储',
+                  onTap: () {
+                    // TODO: 实现定期备份设置
+                  },
+                ),
+                _buildSettingsItem(
+                  context,
+                  icon: Icons.folder_outlined,
+                  title: '备份位置',
+                  subtitle: '查看和管理备份文件',
+                  onTap: () {
+                    // TODO: 实现备份位置管理
+                  },
+                  showDivider: false,
+                ),
+              ]),
+              
+              const SizedBox(height: 24),
+              
+              // 高级选项
+              _buildSettingsCard(context, title: '高级选项', children: [
+                _buildSettingsItem(
+                  context,
+                  icon: Icons.qr_code_2_outlined,
+                  title: '生成备份二维码',
+                  subtitle: '将备份信息生成二维码',
+                  onTap: () {
+                    // TODO: 实现二维码备份
+                  },
+                ),
+                _buildSettingsItem(
+                  context,
+                  icon: Icons.security_outlined,
+                  title: '加密备份',
+                  subtitle: '使用密码保护备份文件',
+                  onTap: () {
+                    // TODO: 实现加密备份
+                  },
+                  showDivider: false,
+                ),
+              ]),
+              
+              const SizedBox(height: 40),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOverviewCard(BuildContext context, TotpProvider totpProvider) {
+    final theme = Theme.of(context);
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: theme.brightness == Brightness.dark ? 0.3 : 0.05,
+            ),
+            blurRadius: theme.brightness == Brightness.dark ? 0 : 10,
+            offset: theme.brightness == Brightness.dark
+                ? Offset.zero
+                : const Offset(0, 2),
+          ),
+        ],
+        border: theme.brightness == Brightness.dark
+            ? Border.all(
+                color: theme.dividerColor.withValues(alpha: 0.2),
+                width: 1,
+              )
+            : null,
+      ),
+      child: Column(
         children: [
-          // 自动备份
-          _buildSettingsSection(
-            context,
-            title: '自动备份',
-            icon: Icons.autorenew_outlined,
-            children: _buildAutoBackupSettings(context),
-          ),
-          const SizedBox(height: 8),
-
-          // 手动备份
-          _buildSettingsSection(
-            context,
-            title: '手动备份',
-            icon: Icons.backup_outlined,
-            children: _buildManualBackupSettings(context, totpProvider),
-          ),
-          const SizedBox(height: 8),
-
-          // 恢复数据
-          _buildSettingsSection(
-            context,
-            title: '恢复数据',
-            icon: Icons.restore_outlined,
-            children: _buildRestoreSettings(context, totpProvider),
-          ),
-          const SizedBox(height: 8),
-
-          // 备份历史
-          _buildSettingsSection(
-            context,
-            title: '备份历史',
-            icon: Icons.history_outlined,
-            children: _buildBackupHistorySettings(context),
+          Row(
+            children: [
+              // 图标容器
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: theme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  Icons.cloud_upload_outlined,
+                  color: theme.primaryColor,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 20),
+              
+              // 统计信息
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '数据概览',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _buildStatItem(
+                          context,
+                          count: totpProvider.entries.length.toString(),
+                          label: '验证器',
+                        ),
+                        const SizedBox(width: 24),
+                        _buildStatItem(
+                          context,
+                          count: '${DateTime.now().month}月${DateTime.now().day}日',
+                          label: '今日',
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSettingsSection(
+  Widget _buildStatItem(BuildContext context, {required String count, required String label}) {
+    final theme = Theme.of(context);
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          count,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: theme.primaryColor,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSettingsCard(
     BuildContext context, {
     required String title,
-    required IconData icon,
     required List<Widget> children,
   }) {
+    final theme = Theme.of(context);
+    
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      width: double.infinity,
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
-          width: 1,
-        ),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: theme.brightness == Brightness.dark ? 0.3 : 0.05,
+            ),
+            blurRadius: theme.brightness == Brightness.dark ? 0 : 10,
+            offset: theme.brightness == Brightness.dark
+                ? Offset.zero
+                : const Offset(0, 2),
+          ),
+        ],
+        border: theme.brightness == Brightness.dark
+            ? Border.all(
+                color: theme.dividerColor.withValues(alpha: 0.2),
+                width: 1,
+              )
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 标题栏
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Icon(icon, size: 20, color: Theme.of(context).primaryColor),
-                const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 13,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-          // 设置项
           ...children,
         ],
       ),
     );
   }
 
-  List<Widget> _buildAutoBackupSettings(BuildContext context) {
-    return [
-      _buildSettingItem(
-        context,
-        title: '启用自动备份',
-        subtitle: '每天自动备份数据到安全位置',
-        trailing: Switch(
-          value: false, // 需要实现实际的存储逻辑
-          onChanged: (value) {
-            _showAutoBackupSetupDialog(context, value);
-          },
-        ),
-      ),
-      _buildSettingItem(
-        context,
-        title: '备份频率',
-        subtitle: '选择自动备份的时间间隔',
-        trailing: Text(
-          '每天',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
-          ),
-        ),
-        onTap: () => _showBackupFrequencyDialog(context),
-      ),
-      _buildSettingItem(
-        context,
-        title: '备份位置',
-        subtitle: '选择备份文件的存储位置',
-        trailing: Text(
-          '本地存储',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
-          ),
-        ),
-        onTap: () => _showBackupLocationDialog(context),
-      ),
-    ];
-  }
-
-  List<Widget> _buildManualBackupSettings(
-    BuildContext context,
-    TotpProvider totpProvider,
-  ) {
-    return [
-      _buildSettingItem(
-        context,
-        title: '立即备份',
-        subtitle: '手动创建当前数据的备份',
-        trailing: IconButton(
-          icon: const Icon(Icons.backup_outlined),
-          onPressed: () => _createManualBackup(context, totpProvider),
-        ),
-        onTap: () => _createManualBackup(context, totpProvider),
-      ),
-      _buildSettingItem(
-        context,
-        title: '导出数据',
-        subtitle: '导出所有2FA数据到加密文件',
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ExportScreen()),
-          );
-        },
-      ),
-      _buildSettingItem(
-        context,
-        title: '备份加密',
-        subtitle: '使用AES-256加密备份文件',
-        trailing: Switch(
-          value: true, // 默认启用加密
-          onChanged: (value) {
-            // 实现加密设置逻辑
-          },
-        ),
-      ),
-    ];
-  }
-
-  List<Widget> _buildRestoreSettings(
-    BuildContext context,
-    TotpProvider totpProvider,
-  ) {
-    return [
-      _buildSettingItem(
-        context,
-        title: '从备份恢复',
-        subtitle: '从备份文件恢复数据',
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const SimpleImportScreen()),
-          );
-        },
-      ),
-      _buildSettingItem(
-        context,
-        title: '查看备份文件',
-        subtitle: '浏览和管理本地备份文件',
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () => _showBackupFilesDialog(context),
-      ),
-      _buildSettingItem(
-        context,
-        title: '验证备份完整性',
-        subtitle: '检查备份文件是否完整可用',
-        trailing: IconButton(
-          icon: const Icon(Icons.verified_user_outlined),
-          onPressed: () => _verifyBackupIntegrity(context),
-        ),
-        onTap: () => _verifyBackupIntegrity(context),
-      ),
-    ];
-  }
-
-  List<Widget> _buildBackupHistorySettings(BuildContext context) {
-    return [
-      _buildSettingItem(
-        context,
-        title: '备份历史记录',
-        subtitle: '查看最近的备份操作',
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () => _showBackupHistoryDialog(context),
-      ),
-      _buildSettingItem(
-        context,
-        title: '清理旧备份',
-        subtitle: '删除超过30天的旧备份文件',
-        trailing: IconButton(
-          icon: const Icon(Icons.cleaning_services_outlined),
-          onPressed: () => _cleanOldBackups(context),
-        ),
-        onTap: () => _cleanOldBackups(context),
-      ),
-      _buildSettingItem(
-        context,
-        title: '备份统计',
-        subtitle: '查看备份文件大小和数量统计',
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () => _showBackupStatisticsDialog(context),
-      ),
-    ];
-  }
-
-  Widget _buildSettingItem(
+  Widget _buildSettingsItem(
     BuildContext context, {
+    required IconData icon,
     required String title,
     required String subtitle,
-    required Widget trailing,
-    VoidCallback? onTap,
+    required VoidCallback onTap,
+    bool showDivider = true,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
-          ),
-        ),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 12,
-        ),
-        title: Text(
-          title,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
-          ),
-        ),
-        trailing: trailing,
-        onTap: onTap,
-      ),
-    );
-  }
-
-  void _showAutoBackupSetupDialog(BuildContext context, bool enable) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(enable ? '启用自动备份' : '禁用自动备份'),
-          content: Text(
-            enable
-                ? '自动备份将在每天凌晨自动创建数据备份。建议在WiFi环境下使用此功能。'
-                : '禁用自动备份后，您需要手动创建备份文件。确定要禁用吗？',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('取消'),
-            ),
-            TextButton(
-              onPressed: () {
-                // 实现自动备份设置逻辑
-                Navigator.of(context).pop();
-              },
-              child: Text(enable ? '启用' : '禁用'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showBackupFrequencyDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('备份频率'),
-          content: const Text('选择自动备份的时间间隔：'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('取消'),
-            ),
-            // 可以添加更多选项
-          ],
-        );
-      },
-    );
-  }
-
-  void _showBackupLocationDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('备份位置'),
-          content: const Text('选择备份文件的存储位置：'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('取消'),
-            ),
-            // 可以添加更多选项
-          ],
-        );
-      },
-    );
-  }
-
-  void _createManualBackup(
-    BuildContext context,
-    TotpProvider totpProvider,
-  ) async {
-    // 获取当前BuildContext的引用
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final theme = Theme.of(context);
     
-    try {
-      // 显示备份进度
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return const AlertDialog(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('正在创建备份...'),
-              ],
-            ),
-          );
-        },
-      );
-
-      // 模拟备份过程
-      await Future.delayed(const Duration(seconds: 2));
-
-      // 检查BuildContext是否仍然有效
-      if (context.mounted) {
-        Navigator.of(context).pop(); // 关闭进度对话框
-        scaffoldMessenger.showSnackBar(const SnackBar(content: Text('备份创建成功！')));
-      }
-    } catch (e) {
-      // 检查BuildContext是否仍然有效
-      if (context.mounted) {
-        Navigator.of(context).pop(); // 关闭进度对话框
-        scaffoldMessenger.showSnackBar(SnackBar(content: Text('备份失败：$e')));
-      }
-    }
-  }
-
-  void _showBackupFilesDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('备份文件'),
-          content: const Text('浏览和管理本地备份文件：'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('取消'),
-            ),
-            // 可以添加文件浏览功能
-          ],
-        );
-      },
-    );
-  }
-
-  void _verifyBackupIntegrity(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('验证备份完整性'),
-          content: const Text('正在检查备份文件的完整性...'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('取消'),
-            ),
-            TextButton(
-              onPressed: () {
-                // 实现验证逻辑
-                Navigator.of(context).pop();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('备份文件完整性验证通过！')));
-                }
-              },
-              child: const Text('验证'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showBackupHistoryDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('备份历史记录'),
-          content: const Text('显示最近的备份操作记录：'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('关闭'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _cleanOldBackups(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('清理旧备份'),
-          content: const Text('此操作将删除超过30天的旧备份文件。确定要继续吗？'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('取消'),
-            ),
-            TextButton(
-              onPressed: () {
-                // 实现清理逻辑
-                Navigator.of(context).pop();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('旧备份文件清理完成！')));
-                }
-              },
-              child: const Text('清理'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showBackupStatisticsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('备份统计'),
-          content: const Text('显示备份文件大小和数量统计信息：'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('关闭'),
-            ),
-          ],
-        );
-      },
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            border: showDivider
+                ? Border(
+                    bottom: BorderSide(
+                      color: theme.dividerColor.withValues(alpha: 0.2),
+                      width: 1,
+                    ),
+                  )
+                : null,
+          ),
+          child: Row(
+            children: [
+              // 图标容器
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: theme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: theme.primaryColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              
+              // 文字内容
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // 箭头图标
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
