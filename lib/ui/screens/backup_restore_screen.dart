@@ -10,211 +10,289 @@ class BackupRestoreScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final totpProvider = Provider.of<TotpProvider>(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF07C160),
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
-        title: const Text(
+        surfaceTintColor: Colors.transparent,
+        title: Text(
           '备份与恢复',
           style: TextStyle(
-            color: Colors.white,
+            color: theme.colorScheme.onSurface,
             fontSize: 17,
             fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: theme.colorScheme.onSurface,
+            size: 20,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        systemOverlayStyle: const SystemUiOverlayStyle(
+        systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
-          statusBarBrightness: Brightness.dark,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        children: [
-          // 备份概览
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // 备份概览
+              _buildOverviewCard(context, totpProvider),
+              
+              const SizedBox(height: 24),
+              
+              // 手动操作
+              _buildSettingsCard(context, title: '手动操作', children: [
+                _buildSettingsItem(
+                  context,
+                  icon: Icons.download_outlined,
+                  title: '导出数据',
+                  subtitle: '将所有验证器导出为文件',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ExportScreen()),
+                    );
+                  },
+                ),
+                _buildSettingsItem(
+                  context,
+                  icon: Icons.upload_outlined,
+                  title: '导入数据',
+                  subtitle: '从备份文件恢复验证器',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SimpleImportScreen()),
+                    );
+                  },
+                  showDivider: false,
+                ),
+              ]),
+              
+              const SizedBox(height: 24),
+              
+              // 自动备份
+              _buildSettingsCard(context, title: '自动备份', children: [
+                _buildSettingsItem(
+                  context,
+                  icon: Icons.schedule_outlined,
+                  title: '定期备份',
+                  subtitle: '每周自动备份到本地存储',
+                  onTap: () {
+                    // TODO: 实现定期备份设置
+                  },
+                ),
+                _buildSettingsItem(
+                  context,
+                  icon: Icons.folder_outlined,
+                  title: '备份位置',
+                  subtitle: '查看和管理备份文件',
+                  onTap: () {
+                    // TODO: 实现备份位置管理
+                  },
+                  showDivider: false,
+                ),
+              ]),
+              
+              const SizedBox(height: 24),
+              
+              // 高级选项
+              _buildSettingsCard(context, title: '高级选项', children: [
+                _buildSettingsItem(
+                  context,
+                  icon: Icons.qr_code_2_outlined,
+                  title: '生成备份二维码',
+                  subtitle: '将备份信息生成二维码',
+                  onTap: () {
+                    // TODO: 实现二维码备份
+                  },
+                ),
+                _buildSettingsItem(
+                  context,
+                  icon: Icons.security_outlined,
+                  title: '加密备份',
+                  subtitle: '使用密码保护备份文件',
+                  onTap: () {
+                    // TODO: 实现加密备份
+                  },
+                  showDivider: false,
+                ),
+              ]),
+              
+              const SizedBox(height: 40),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOverviewCard(BuildContext context, TotpProvider totpProvider) {
+    final theme = Theme.of(context);
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: theme.brightness == Brightness.dark ? 0.3 : 0.05,
             ),
-            child: Column(
-              children: [
-                Row(
+            blurRadius: theme.brightness == Brightness.dark ? 0 : 10,
+            offset: theme.brightness == Brightness.dark
+                ? Offset.zero
+                : const Offset(0, 2),
+          ),
+        ],
+        border: theme.brightness == Brightness.dark
+            ? Border.all(
+                color: theme.dividerColor.withValues(alpha: 0.2),
+                width: 1,
+              )
+            : null,
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              // 图标容器
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: theme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  Icons.cloud_upload_outlined,
+                  color: theme.primaryColor,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 20),
+              
+              // 统计信息
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF07C160).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: const Icon(
-                        Icons.cloud_upload,
-                        color: Color(0xFF07C160),
-                        size: 24,
+                    Text(
+                      '数据概览',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            '数据概览',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '共 ${totpProvider.entries.length} 个验证器',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _buildStatItem(
+                          context,
+                          count: totpProvider.entries.length.toString(),
+                          label: '验证器',
+                        ),
+                        const SizedBox(width: 24),
+                        _buildStatItem(
+                          context,
+                          count: '${DateTime.now().month}月${DateTime.now().day}日',
+                          label: '今日',
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // 手动操作
-          _buildWeChatSettingsGroup(
-            context,
-            title: '手动操作',
-            children: [
-              _buildWeChatSettingsItem(
-                context,
-                icon: Icons.download,
-                title: '导出数据',
-                subtitle: '将所有验证器导出为文件',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ExportScreen()),
-                  );
-                },
-              ),
-              _buildWeChatSettingsItem(
-                context,
-                icon: Icons.upload,
-                title: '导入数据',
-                subtitle: '从备份文件恢复验证器',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SimpleImportScreen()),
-                  );
-                },
-                showDivider: false,
               ),
             ],
           ),
-          
-          const SizedBox(height: 20),
-          
-          // 自动备份
-          _buildWeChatSettingsGroup(
-            context,
-            title: '自动备份',
-            children: [
-              _buildWeChatSettingsItem(
-                context,
-                icon: Icons.schedule,
-                title: '定期备份',
-                subtitle: '每周自动备份到本地存储',
-                onTap: () {
-                  // TODO: 实现定期备份设置
-                },
-              ),
-              _buildWeChatSettingsItem(
-                context,
-                icon: Icons.folder,
-                title: '备份位置',
-                subtitle: '查看和管理备份文件',
-                onTap: () {
-                  // TODO: 实现备份位置管理
-                },
-                showDivider: false,
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // 高级选项
-          _buildWeChatSettingsGroup(
-            context,
-            title: '高级选项',
-            children: [
-              _buildWeChatSettingsItem(
-                context,
-                icon: Icons.qr_code,
-                title: '生成备份二维码',
-                subtitle: '将备份信息生成二维码',
-                onTap: () {
-                  // TODO: 实现二维码备份
-                },
-              ),
-              _buildWeChatSettingsItem(
-                context,
-                icon: Icons.security,
-                title: '加密备份',
-                subtitle: '使用密码保护备份文件',
-                onTap: () {
-                  // TODO: 实现加密备份
-                },
-                showDivider: false,
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 40),
         ],
       ),
     );
   }
 
-  Widget _buildWeChatSettingsGroup(
+  Widget _buildStatItem(BuildContext context, {required String count, required String label}) {
+    final theme = Theme.of(context);
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          count,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: theme.primaryColor,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSettingsCard(
     BuildContext context, {
     required String title,
     required List<Widget> children,
   }) {
+    final theme = Theme.of(context);
+    
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: theme.brightness == Brightness.dark ? 0.3 : 0.05,
+            ),
+            blurRadius: theme.brightness == Brightness.dark ? 0 : 10,
+            offset: theme.brightness == Brightness.dark
+                ? Offset.zero
+                : const Offset(0, 2),
+          ),
+        ],
+        border: theme.brightness == Brightness.dark
+            ? Border.all(
+                color: theme.dividerColor.withValues(alpha: 0.2),
+                width: 1,
+              )
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey,
-                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -224,7 +302,7 @@ class BackupRestoreScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildWeChatSettingsItem(
+  Widget _buildSettingsItem(
     BuildContext context, {
     required IconData icon,
     required String title,
@@ -232,57 +310,73 @@ class BackupRestoreScreen extends StatelessWidget {
     required VoidCallback onTap,
     bool showDivider = true,
   }) {
+    final theme = Theme.of(context);
+    
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             border: showDivider
-                ? const Border(
+                ? Border(
                     bottom: BorderSide(
-                      color: Color(0xFFE5E5E5),
-                      width: 0.5,
+                      color: theme.dividerColor.withValues(alpha: 0.2),
+                      width: 1,
                     ),
                   )
                 : null,
           ),
           child: Row(
             children: [
-              Icon(
-                icon,
-                color: const Color(0xFF07C160),
-                size: 22,
+              // 图标容器
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: theme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: theme.primaryColor,
+                  size: 24,
+                ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
+              
+              // 文字内容
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
-                        color: Colors.grey,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(
+              
+              // 箭头图标
+              Icon(
                 Icons.arrow_forward_ios,
-                color: Colors.grey,
-                size: 12,
+                size: 16,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ],
           ),

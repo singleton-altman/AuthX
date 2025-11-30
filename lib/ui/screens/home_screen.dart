@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +12,8 @@ import 'package:authx/ui/screens/add_entry_screen.dart';
 import 'package:authx/ui/screens/qr_scanner_screen.dart';
 import 'package:authx/ui/screens/settings_screen.dart';
 import 'package:authx/ui/screens/totp_display_screen.dart';
+import 'package:authx/ui/screens/export_screen.dart';
+import 'package:authx/ui/screens/simple_import_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,18 +22,25 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   late final TimerService _timerService;
   final TextEditingController _searchController = TextEditingController();
   String? _selectedTag; // 选中的标签
   String _searchQuery = ''; // 搜索关键词
   bool _isSyncing = false; // 同步状态
+  late AnimationController _fabAnimationController;
+  bool _isFABMenuOpen = false;
 
   @override
   void initState() {
     super.initState();
     _timerService = TimerService();
     _timerService.startTimer();
+    _fabAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.toLowerCase();
@@ -43,6 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _timerService.stopTimer();
     _timerService.dispose();
     _searchController.dispose();
+    _fabAnimationController.dispose();
     super.dispose();
   }
 
@@ -51,416 +62,611 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        title: const Text(
-          '验证码',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
-        systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
-        ),
-        actions: [
-          // 深浅色切换按钮
-          Consumer<ThemeProvider>(
-            builder: (context, themeProvider, _) {
-              final currentMode = themeProvider.themeMode;
-              return IconButton(
-                icon: currentMode == ThemeMode.system
-                    ? const Icon(Icons.smartphone, size: 24)
-                    : Icon(
-                        isDark ? Icons.light_mode : Icons.dark_mode,
-                        size: 24,
-                      ),
-                onPressed: () {
-                  if (currentMode == ThemeMode.dark) {
-                    themeProvider.setThemeMode(ThemeMode.light);
-                  } else if (currentMode == ThemeMode.light) {
-                    themeProvider.setThemeMode(ThemeMode.system);
-                  } else {
-                    themeProvider.setThemeMode(ThemeMode.dark);
-                  }
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: theme.scaffoldBackgroundColor,
+          appBar: AppBar(
+            backgroundColor: theme.scaffoldBackgroundColor,
+            elevation: 0,
+            title: const Text(
+              '验证码',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            centerTitle: true,
+            systemOverlayStyle: SystemUiOverlayStyle(
+              statusBarColor: Colors.transparent,
+              statusBarIconBrightness: isDark
+                  ? Brightness.light
+                  : Brightness.dark,
+              statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+            ),
+            actions: [
+              // 深浅色切换按钮
+              Consumer<ThemeProvider>(
+                builder: (context, themeProvider, _) {
+                  final currentMode = themeProvider.themeMode;
+                  return IconButton(
+                    icon: currentMode == ThemeMode.system
+                        ? const Icon(Icons.smartphone, size: 24)
+                        : Icon(
+                            isDark ? Icons.light_mode : Icons.dark_mode,
+                            size: 24,
+                          ),
+                    onPressed: () {
+                      if (currentMode == ThemeMode.dark) {
+                        themeProvider.setThemeMode(ThemeMode.light);
+                      } else if (currentMode == ThemeMode.light) {
+                        themeProvider.setThemeMode(ThemeMode.system);
+                      } else {
+                        themeProvider.setThemeMode(ThemeMode.dark);
+                      }
+                    },
+                  );
                 },
-              );
-            },
+              ),
+              // 云朵同步按钮
+              IconButton(
+                icon: _isSyncing
+                    ? const Icon(
+                        Icons.check_circle,
+                        size: 24,
+                        color: Colors.green,
+                      )
+                    : const Icon(Icons.cloud_outlined, size: 24),
+                style: _isSyncing
+                    ? IconButton.styleFrom(
+                        backgroundColor: Colors.green.withValues(alpha: 0.15),
+                      )
+                    : null,
+                onPressed: () async {
+                  setState(() {
+                    _isSyncing = true;
+                  });
+                  // 模拟同步过程
+                  await Future.delayed(const Duration(seconds: 2));
+                  setState(() {
+                    _isSyncing = false;
+                  });
+                },
+              ),
+              // 设置按钮
+              IconButton(
+                icon: const Icon(Icons.settings_outlined),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                  );
+                },
+              ),
+            ],
           ),
-          // 云朵同步按钮
-          IconButton(
-            icon: _isSyncing
-                ? const Icon(Icons.check_circle, size: 24, color: Colors.green)
-                : const Icon(Icons.cloud_outlined, size: 24),
-            style: _isSyncing
-                ? IconButton.styleFrom(
-                    backgroundColor: Colors.green.withValues(alpha: 0.15),
-                  )
-                : null,
-            onPressed: () async {
-              setState(() {
-                _isSyncing = true;
-              });
-              // 模拟同步过程
-              await Future.delayed(const Duration(seconds: 2));
-              setState(() {
-                _isSyncing = false;
-              });
-            },
-          ),
-          // 设置按钮
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Consumer<TotpProvider>(
-        builder: (context, totpProvider, _) {
-          if (totpProvider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+          body: Consumer<TotpProvider>(
+            builder: (context, totpProvider, _) {
+              if (totpProvider.isLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-          if (totpProvider.entries.isEmpty) {
-            return const EmptyStateView();
-          }
+              if (totpProvider.entries.isEmpty) {
+                return const EmptyStateView();
+              }
 
-          // 提取所有唯一标签
-          final allTags = <String>{};
-          for (var entry in totpProvider.entries) {
-            allTags.addAll(entry.tags);
-          }
-          final sortedTags = allTags.toList()..sort();
+              // 提取所有唯一标签
+              final allTags = <String>{};
+              for (var entry in totpProvider.entries) {
+                allTags.addAll(entry.tags);
+              }
+              final sortedTags = allTags.toList()..sort();
 
-          // 根据选中的标签筛选条目
-          var filteredEntries = _selectedTag == null
-              ? totpProvider.entries
-              : totpProvider.entries
-                    .where((entry) => entry.tags.contains(_selectedTag))
+              // 根据选中的标签筛选条目
+              var filteredEntries = _selectedTag == null
+                  ? totpProvider.entries
+                  : totpProvider.entries
+                        .where((entry) => entry.tags.contains(_selectedTag))
+                        .toList();
+
+              // 根据搜索关键词进一步筛选
+              if (_searchQuery.isNotEmpty) {
+                filteredEntries = filteredEntries
+                    .where(
+                      (entry) =>
+                          entry.issuer.toLowerCase().contains(_searchQuery) ||
+                          entry.name.toLowerCase().contains(_searchQuery) ||
+                          entry.tags.any(
+                            (tag) => tag.toLowerCase().contains(_searchQuery),
+                          ),
+                    )
                     .toList();
+              }
 
-          // 根据搜索关键词进一步筛选
-          if (_searchQuery.isNotEmpty) {
-            filteredEntries = filteredEntries
-                .where(
-                  (entry) =>
-                      entry.issuer.toLowerCase().contains(_searchQuery) ||
-                      entry.name.toLowerCase().contains(_searchQuery) ||
-                      entry.tags.any((tag) => tag.toLowerCase().contains(_searchQuery)),
-                )
-                .toList();
-          }
-
-          return Stack(
-            children: [
-              Column(
+              return Stack(
                 children: [
-                  // 搜索栏 + 倒计时胶囊
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: SizedBox(
-                            height: 40,
-                            child: TextField(
-                              controller: _searchController,
-                              decoration: InputDecoration(
-                                hintText: '搜索发行方或账户名',
-                                hintStyle: TextStyle(
-                                  color: theme.colorScheme.onSurface.withValues(
-                                    alpha: 0.5,
-                                  ),
-                                  fontSize: 14,
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.search,
-                                  color: theme.colorScheme.onSurface.withValues(
-                                    alpha: 0.5,
-                                  ),
-                                  size: 20,
-                                ),
-                                suffixIcon: _searchQuery.isNotEmpty
-                                    ? IconButton(
-                                        icon: Icon(
-                                          Icons.close,
-                                          color: theme.colorScheme.onSurface
-                                              .withValues(alpha: 0.5),
-                                          size: 20,
-                                        ),
-                                        onPressed: () {
-                                          _searchController.clear();
-                                          setState(() {
-                                            _searchQuery = '';
-                                          });
-                                        },
-                                      )
-                                    : null,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(24),
-                                  borderSide: BorderSide(
-                                    color: theme.dividerColor.withValues(
-                                      alpha: 0.2,
-                                    ),
-                                    width: 1,
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(24),
-                                  borderSide: BorderSide(
-                                    color: theme.dividerColor.withValues(
-                                      alpha: 0.2,
-                                    ),
-                                    width: 1,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(24),
-                                  borderSide: BorderSide(
-                                    color: theme.primaryColor,
-                                    width: 1,
-                                  ),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 10,
-                                ),
-                                filled: true,
-                                fillColor: theme.colorScheme.surface,
-                                isDense: true,
-                              ),
-                              onChanged: (value) {
-                                setState(() {
-                                  _searchQuery = value.toLowerCase();
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        // 倒计时胶囊
-                        StreamBuilder<int>(
-                          stream: Stream.periodic(
-                            const Duration(seconds: 1),
-                            (_) => 30 - (DateTime.now().second % 30),
-                          ),
-                          initialData: 30 - (DateTime.now().second % 30),
-                          builder: (context, snapshot) {
-                            final remainingTime = snapshot.data ?? 30;
-
-                            return Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.surface,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: theme.dividerColor.withValues(
-                                    alpha: 0.2,
-                                  ),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.timer_outlined,
-                                    color: remainingTime <= 5
-                                        ? Colors.red
-                                        : theme.primaryColor,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    '${remainingTime}s',
-                                    style: TextStyle(
-                                      color: remainingTime <= 5
-                                          ? Colors.red
-                                          : theme.primaryColor,
+                  Column(
+                    children: [
+                      // 搜索栏 + 倒计时胶囊
+                      Container(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: SizedBox(
+                                height: 40,
+                                child: TextField(
+                                  controller: _searchController,
+                                  decoration: InputDecoration(
+                                    hintText: '搜索发行方或账户名',
+                                    hintStyle: TextStyle(
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.5),
                                       fontSize: 14,
-                                      fontWeight: FontWeight.bold,
                                     ),
+                                    prefixIcon: Icon(
+                                      Icons.search,
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.5),
+                                      size: 20,
+                                    ),
+                                    suffixIcon: _searchQuery.isNotEmpty
+                                        ? IconButton(
+                                            icon: Icon(
+                                              Icons.close,
+                                              color: theme.colorScheme.onSurface
+                                                  .withValues(alpha: 0.5),
+                                              size: 20,
+                                            ),
+                                            onPressed: () {
+                                              _searchController.clear();
+                                              setState(() {
+                                                _searchQuery = '';
+                                              });
+                                            },
+                                          )
+                                        : null,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(24),
+                                      borderSide: BorderSide(
+                                        color: theme.dividerColor.withValues(
+                                          alpha: 0.2,
+                                        ),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(24),
+                                      borderSide: BorderSide(
+                                        color: theme.dividerColor.withValues(
+                                          alpha: 0.2,
+                                        ),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(24),
+                                      borderSide: BorderSide(
+                                        color: theme.primaryColor,
+                                        width: 1,
+                                      ),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 10,
+                                    ),
+                                    filled: true,
+                                    fillColor: theme.colorScheme.surface,
+                                    isDense: true,
                                   ),
-                                ],
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _searchQuery = value.toLowerCase();
+                                    });
+                                  },
+                                ),
                               ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  // 标签栏
-                  if (sortedTags.isNotEmpty)
-                    Container(
-                      height: 50,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: sortedTags.length + 1,
-                        itemBuilder: (context, index) {
-                          if (index == 0) {
-                            // "全部" 按钮
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _selectedTag = null;
-                                  });
-                                },
-                                child: Container(
+                            ),
+                            const SizedBox(width: 12),
+                            // 倒计时胶囊
+                            StreamBuilder<int>(
+                              stream: Stream.periodic(
+                                const Duration(seconds: 1),
+                                (_) => 30 - (DateTime.now().second % 30),
+                              ),
+                              initialData: 30 - (DateTime.now().second % 30),
+                              builder: (context, snapshot) {
+                                final remainingTime = snapshot.data ?? 30;
+
+                                return Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
+                                    horizontal: 12,
+                                    vertical: 10,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: _selectedTag == null
-                                        ? theme.primaryColor
-                                        : theme.colorScheme.surface,
+                                    color: theme.colorScheme.surface,
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(
-                                      color: _selectedTag == null
-                                          ? Colors.transparent
-                                          : theme.dividerColor.withValues(
-                                              alpha: 0.2,
-                                            ),
+                                      color: theme.dividerColor.withValues(
+                                        alpha: 0.2,
+                                      ),
                                       width: 1,
                                     ),
                                   ),
-                                  child: Center(
-                                    child: Text(
-                                      '全部',
-                                      style: TextStyle(
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.timer_outlined,
+                                        color: remainingTime <= 5
+                                            ? Colors.red
+                                            : theme.primaryColor,
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        '${remainingTime}s',
+                                        style: TextStyle(
+                                          color: remainingTime <= 5
+                                              ? Colors.red
+                                              : theme.primaryColor,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      // 标签栏
+                      if (sortedTags.isNotEmpty)
+                        Container(
+                          height: 32,
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: sortedTags.length + 1,
+                            itemBuilder: (context, index) {
+                              if (index == 0) {
+                                // "全部" 按钮
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 6),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedTag = null;
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 3,
+                                      ),
+                                      decoration: BoxDecoration(
                                         color: _selectedTag == null
-                                            ? Colors.white
-                                            : theme.colorScheme.onSurface,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
+                                            ? theme.primaryColor
+                                            : theme.colorScheme.surface,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: _selectedTag == null
+                                              ? Colors.transparent
+                                              : theme.dividerColor.withValues(
+                                                  alpha: 0.2,
+                                                ),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          '全部',
+                                          style: TextStyle(
+                                            color: _selectedTag == null
+                                                ? Colors.white
+                                                : theme.colorScheme.onSurface,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
+
+                              final tag = sortedTags[index - 1];
+                              final isSelected = _selectedTag == tag;
+
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedTag = isSelected ? null : tag;
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? theme.primaryColor
+                                          : theme.colorScheme.surface,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? Colors.transparent
+                                            : theme.dividerColor.withValues(
+                                                alpha: 0.2,
+                                              ),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        tag,
+                                        style: TextStyle(
+                                          color: isSelected
+                                              ? Colors.white
+                                              : theme.colorScheme.onSurface,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            );
-                          }
-
-                          final tag = sortedTags[index - 1];
-                          final isSelected = _selectedTag == tag;
-
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedTag = isSelected ? null : tag;
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? theme.primaryColor
-                                      : theme.colorScheme.surface,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? Colors.transparent
-                                        : theme.dividerColor.withValues(
-                                            alpha: 0.2,
-                                          ),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Center(
+                              );
+                            },
+                          ),
+                        ),
+                      const SizedBox(height: 12),
+                      // 验证码列表
+                      Expanded(
+                        child: RefreshIndicator(
+                          color: Colors.blue,
+                          onRefresh: totpProvider.loadEntries,
+                          child: filteredEntries.isEmpty
+                              ? Center(
                                   child: Text(
-                                    tag,
+                                    '该标签下没有验证器',
                                     style: TextStyle(
-                                      color: isSelected
-                                          ? Colors.white
-                                          : theme.colorScheme.onSurface,
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.7),
                                       fontSize: 14,
-                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
+                                )
+                              : ListView.builder(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
+                                  itemCount: filteredEntries.length,
+                                  itemBuilder: (context, index) {
+                                    final entry = filteredEntries[index];
+                                    return _buildModernTotpItem(context, entry);
+                                  },
                                 ),
-                              ),
-                            ),
-                          );
-                        },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
+          floatingActionButton: null, // 移除 Scaffold 的 FAB
+        ),
+        // 背景遮罩层 - 点击关闭菜单
+        if (_isFABMenuOpen)
+          GestureDetector(
+            onTap: () {
+              _closeFABMenu();
+            },
+            child: Container(color: Colors.black.withValues(alpha: 0.5)),
+          ),
+        // FAB 按钮和菜单 - 放在最上层
+        _buildFABMenu(context, theme),
+      ],
+    );
+  }
+
+  Widget _buildFABMenu(BuildContext context, ThemeData theme) {
+    return Align(
+      alignment: Alignment.bottomRight,
+      child: Padding(
+        padding: const EdgeInsets.only(right: 16, bottom: 80),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            // 菜单项 - 垂直排列在按钮上方
+            _buildAnimatedFABMenuItem(
+              label: '导出',
+              icon: Icons.file_upload,
+              index: 3,
+              rotation: 1.5708, // 90度 (π/2)
+              onTap: () {
+                _closeFABMenu();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ExportScreen()),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildAnimatedFABMenuItem(
+              label: '导入',
+              icon: Icons.file_download,
+              index: 2,
+              rotation: -1.5708, // -90度 (-π/2)
+              onTap: () {
+                _closeFABMenu();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SimpleImportScreen()),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildAnimatedFABMenuItem(
+              label: '扫描二维码',
+              icon: Icons.qr_code_scanner,
+              index: 1,
+              onTap: () {
+                _closeFABMenu();
+                _onScanQR(context);
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildAnimatedFABMenuItem(
+              label: '手动添加',
+              icon: Icons.edit,
+              index: 0,
+              onTap: () {
+                _closeFABMenu();
+                _onManualAdd(context);
+              },
+            ),
+            const SizedBox(height: 12),
+            // 主 FAB 按钮
+            FloatingActionButton(
+              backgroundColor: theme.primaryColor,
+              elevation: 8,
+              highlightElevation: 12,
+              onPressed: () {
+                if (_isFABMenuOpen) {
+                  _closeFABMenu();
+                } else {
+                  _openFABMenu();
+                }
+              },
+              child: AnimatedBuilder(
+                animation: _fabAnimationController,
+                builder: (context, child) {
+                  return Transform.rotate(
+                    angle: _fabAnimationController.value * 3.14159 / 4,
+                    child: const Icon(Icons.add, size: 32),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnimatedFABMenuItem({
+    required String label,
+    required IconData icon,
+    required int index,
+    required VoidCallback onTap,
+    double? rotation,
+  }) {
+    return AnimatedBuilder(
+      animation: _fabAnimationController,
+      builder: (context, child) {
+        final theme = Theme.of(context);
+        final delay = index * 0.06;
+        final progress = (_fabAnimationController.value - delay).clamp(
+          0.0,
+          1.0,
+        );
+
+        // 菜单项从下方向上出现
+        final offsetY = (1 - progress) * 20;
+
+        return Opacity(
+          opacity: progress,
+          child: Transform.translate(
+            offset: Offset(0, offsetY),
+            child: GestureDetector(
+              onTap: onTap,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 左边：标签
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.none,
                       ),
                     ),
-                  // 验证码列表
-                  Expanded(
-                    child: RefreshIndicator(
-                      color: Colors.blue,
-                      onRefresh: totpProvider.loadEntries,
-                      child: filteredEntries.isEmpty
-                          ? Center(
-                              child: Text(
-                                '该标签下没有验证器',
-                                style: TextStyle(
-                                  color: theme.colorScheme.onSurface.withValues(
-                                    alpha: 0.7,
-                                  ),
-                                  fontSize: 14,
-                                ),
-                              ),
+                  ),
+                  const SizedBox(width: 12),
+                  // 右边：圆角方形图标按钮
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: rotation != null
+                          ? Transform.rotate(
+                              angle: rotation,
+                              child: Icon(icon, color: Colors.black, size: 24),
                             )
-                          : ListView.builder(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
-                              itemCount: filteredEntries.length,
-                              itemBuilder: (context, index) {
-                                final entry = filteredEntries[index];
-                                return _buildModernTotpItem(context, entry);
-                              },
-                            ),
+                          : Icon(icon, color: Colors.black, size: 24),
                     ),
                   ),
                 ],
               ),
-            ],
-          );
-        },
-      ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            child: FloatingActionButton(
-              heroTag: "scan",
-              backgroundColor: theme.primaryColor,
-              onPressed: () => _onScanQR(context),
-              child: const Icon(Icons.qr_code_scanner),
             ),
           ),
-          FloatingActionButton(
-            heroTag: "add",
-            backgroundColor: theme.primaryColor,
-            onPressed: () => _onManualAdd(context),
-            child: const Icon(Icons.add),
-          ),
-        ],
-      ),
+        );
+      },
     );
+  }
+
+  void _openFABMenu() {
+    setState(() {
+      _isFABMenuOpen = true;
+    });
+    _fabAnimationController.forward();
+  }
+
+  void _closeFABMenu() {
+    _fabAnimationController.reverse();
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          _isFABMenuOpen = false;
+        });
+      }
+    });
   }
 
   // 添加缺失的函数定义

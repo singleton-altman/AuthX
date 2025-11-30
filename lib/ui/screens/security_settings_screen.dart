@@ -8,196 +8,181 @@ class SecuritySettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final totpProvider = Provider.of<TotpProvider>(context);
-    
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF07C160),
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
-        title: const Text(
+        surfaceTintColor: Colors.transparent,
+        title: Text(
           '安全设置',
           style: TextStyle(
-            color: Colors.white,
+            color: theme.colorScheme.onSurface,
             fontSize: 17,
             fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: theme.colorScheme.onSurface,
+            size: 20,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        systemOverlayStyle: const SystemUiOverlayStyle(
+        systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
-          statusBarBrightness: Brightness.dark,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        children: [
-          // 应用锁定
-          _buildWeChatSettingsGroup(
-            context,
-            title: '应用锁定',
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
             children: [
-              _buildWeChatSettingsItem(
-                context,
-                icon: Icons.lock,
-                title: '应用锁定密码',
-                subtitle: '设置应用启动密码',
-                onTap: () {
-                  // TODO: 实现应用锁定密码设置
-                },
-              ),
-              _buildWeChatSettingsItem(
-                context,
-                icon: Icons.fingerprint,
-                title: '生物识别',
-                subtitle: '使用指纹或面部识别',
-                onTap: () {
-                  // TODO: 实现生物识别设置
-                },
-                showDivider: false,
-              ),
+              // 应用锁定
+              _buildSettingsCard(context, title: '应用锁定', children: [
+                _buildSettingsItem(
+                  context,
+                  icon: Icons.lock_outline,
+                  title: '应用锁定密码',
+                  subtitle: '设置应用启动密码',
+                  onTap: () {
+                    // TODO: 实现应用锁定密码设置
+                  },
+                ),
+                _buildSettingsItem(
+                  context,
+                  icon: Icons.fingerprint_outlined,
+                  title: '生物识别',
+                  subtitle: '使用指纹或面部识别',
+                  onTap: () {
+                    // TODO: 实现生物识别设置
+                  },
+                  showDivider: false,
+                ),
+              ]),
+              
+              const SizedBox(height: 24),
+              
+              // 数据保护
+              _buildSettingsCard(context, title: '数据保护', children: [
+                _buildSettingsItem(
+                  context,
+                  icon: Icons.enhanced_encryption_outlined,
+                  title: '数据加密',
+                  subtitle: '使用设备级加密存储',
+                  onTap: () {
+                    // TODO: 实现数据加密设置
+                  },
+                ),
+                _buildSettingsItem(
+                  context,
+                  icon: Icons.timer_outlined,
+                  title: '自动锁定',
+                  subtitle: '应用在后台时自动锁定',
+                  onTap: () {
+                    // TODO: 实现自动锁定设置
+                  },
+                  showDivider: false,
+                ),
+              ]),
+              
+              const SizedBox(height: 24),
+              
+              // 隐私设置
+              _buildSettingsCard(context, title: '隐私设置', children: [
+                _buildSettingsItem(
+                  context,
+                  icon: Icons.visibility_off_outlined,
+                  title: '隐藏验证码',
+                  subtitle: '默认隐藏验证码数字',
+                  onTap: () {
+                    // TODO: 实现隐藏验证码设置
+                  },
+                ),
+                _buildSettingsItem(
+                  context,
+                  icon: Icons.screenshot_outlined,
+                  title: '防止截图',
+                  subtitle: '禁止在此页面截图',
+                  onTap: () {
+                    // TODO: 实现防截图设置
+                  },
+                  showDivider: false,
+                ),
+              ]),
+              
+              const SizedBox(height: 24),
+              
+              // 危险操作
+              _buildSettingsCard(context, title: '危险操作', children: [
+                _buildSettingsItem(
+                  context,
+                  icon: Icons.delete_forever_outlined,
+                  title: '清除所有数据',
+                  subtitle: '删除所有验证器和设置',
+                  onTap: () => _showClearDataDialog(context, totpProvider),
+                  showDivider: false,
+                  isDanger: true,
+                ),
+              ]),
+              
+              const SizedBox(height: 40),
             ],
           ),
-          
-          const SizedBox(height: 20),
-          
-          // 数据保护
-          _buildWeChatSettingsGroup(
-            context,
-            title: '数据保护',
-            children: [
-              _buildWeChatSettingsItem(
-                context,
-                icon: Icons.enhanced_encryption,
-                title: '数据加密',
-                subtitle: '使用设备级加密存储',
-                onTap: () {
-                  // TODO: 实现数据加密设置
-                },
-              ),
-              _buildWeChatSettingsItem(
-                context,
-                icon: Icons.timer,
-                title: '自动锁定',
-                subtitle: '应用在后台时自动锁定',
-                onTap: () {
-                  // TODO: 实现自动锁定设置
-                },
-                showDivider: false,
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // 导出与备份
-          _buildWeChatSettingsGroup(
-            context,
-            title: '导出与备份',
-            children: [
-              _buildWeChatSettingsItem(
-                context,
-                icon: Icons.download,
-                title: '导出数据',
-                subtitle: '导出所有验证器数据',
-                onTap: () {
-                  // TODO: 实现数据导出
-                },
-              ),
-              _buildWeChatSettingsItem(
-                context,
-                icon: Icons.upload,
-                title: '导入数据',
-                subtitle: '从备份文件导入数据',
-                onTap: () {
-                  // TODO: 实现数据导入
-                },
-                showDivider: false,
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // 隐私设置
-          _buildWeChatSettingsGroup(
-            context,
-            title: '隐私设置',
-            children: [
-              _buildWeChatSettingsItem(
-                context,
-                icon: Icons.visibility_off,
-                title: '隐藏验证码',
-                subtitle: '默认隐藏验证码数字',
-                onTap: () {
-                  // TODO: 实现隐藏验证码设置
-                },
-              ),
-              _buildWeChatSettingsItem(
-                context,
-                icon: Icons.screenshot,
-                title: '防止截图',
-                subtitle: '禁止在此页面截图',
-                onTap: () {
-                  // TODO: 实现防截图设置
-                },
-                showDivider: false,
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // 危险操作
-          _buildWeChatSettingsGroup(
-            context,
-            title: '危险操作',
-            children: [
-              _buildWeChatSettingsItem(
-                context,
-                icon: Icons.delete_forever,
-                title: '清除所有数据',
-                subtitle: '删除所有验证器和设置',
-                onTap: () => _showClearDataDialog(context, totpProvider),
-                showDivider: false,
-                isDanger: true,
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 40),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildWeChatSettingsGroup(
+  Widget _buildSettingsCard(
     BuildContext context, {
     required String title,
     required List<Widget> children,
   }) {
+    final theme = Theme.of(context);
+    
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: theme.brightness == Brightness.dark ? 0.3 : 0.05,
+            ),
+            blurRadius: theme.brightness == Brightness.dark ? 0 : 10,
+            offset: theme.brightness == Brightness.dark
+                ? Offset.zero
+                : const Offset(0, 2),
+          ),
+        ],
+        border: theme.brightness == Brightness.dark
+            ? Border.all(
+                color: theme.dividerColor.withValues(alpha: 0.2),
+                width: 1,
+              )
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey,
-                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -207,7 +192,7 @@ class SecuritySettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildWeChatSettingsItem(
+  Widget _buildSettingsItem(
     BuildContext context, {
     required IconData icon,
     required String title,
@@ -216,30 +201,46 @@ class SecuritySettingsScreen extends StatelessWidget {
     bool showDivider = true,
     bool isDanger = false,
   }) {
+    final theme = Theme.of(context);
+    
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             border: showDivider
-                ? const Border(
+                ? Border(
                     bottom: BorderSide(
-                      color: Color(0xFFE5E5E5),
-                      width: 0.5,
+                      color: theme.dividerColor.withValues(alpha: 0.2),
+                      width: 1,
                     ),
                   )
                 : null,
           ),
           child: Row(
             children: [
-              Icon(
-                icon,
-                color: isDanger ? Colors.red : const Color(0xFF07C160),
-                size: 22,
+              // 图标容器
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: isDanger 
+                      ? Colors.red.withValues(alpha: 0.1)
+                      : theme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: isDanger ? Colors.red : theme.primaryColor,
+                  size: 24,
+                ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
+              
+              // 文字内容
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -248,25 +249,29 @@ class SecuritySettingsScreen extends StatelessWidget {
                       title,
                       style: TextStyle(
                         fontSize: 16,
-                        color: isDanger ? Colors.red : Colors.black87,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
+                        color: isDanger 
+                            ? Colors.red
+                            : theme.colorScheme.onSurface,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
-                        color: Colors.grey,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(
+              
+              // 箭头图标
+              Icon(
                 Icons.arrow_forward_ios,
-                color: Colors.grey,
-                size: 12,
+                size: 16,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ],
           ),

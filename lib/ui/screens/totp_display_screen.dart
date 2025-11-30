@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -16,7 +17,14 @@ class TotpDisplayScreen extends StatefulWidget {
 }
 
 class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
-  bool _showOverlay = false;
+  late TotpEntry _currentEntry;
+
+  @override
+  void initState() {
+    super.initState();
+    // 初始化 _currentEntry
+    _currentEntry = widget.entry;
+  }
 
   @override
   void dispose() {
@@ -29,16 +37,25 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
     Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => EditEntryScreen(entry: widget.entry),
+            builder: (context) => EditEntryScreen(entry: _currentEntry),
           ),
         )
         .then((result) {
           if (!mounted) return;
 
           if (result == true) {
+            // 编辑成功后，从provider重新获取最新的entry数据
+            final totpProvider = Provider.of<TotpProvider>(
+              context,
+              listen: false,
+            );
+            final updatedEntry = totpProvider.entries.firstWhere(
+              (e) => e.id == _currentEntry.id,
+              orElse: () => _currentEntry,
+            );
             if (mounted) {
               setState(() {
-                // 可以在这里触发任何需要的状态更新
+                _currentEntry = updatedEntry;
               });
             }
           }
@@ -56,174 +73,83 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         title: Text(
-          widget.entry.issuer.isNotEmpty ? widget.entry.issuer : '验证码',
-          style: const TextStyle(
-            color: Colors.black87,
+          _currentEntry.issuer.isNotEmpty ? _currentEntry.issuer : '验证码',
+          style: TextStyle(
+            color: theme.colorScheme.onSurface,
             fontSize: 17,
             fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios,
-            color: Colors.black87,
+            color: theme.colorScheme.onSurface,
             size: 20,
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              _showOverlay ? Icons.close : Icons.more_horiz,
-              color: Colors.black87,
-            ),
-            onPressed: () {
-              setState(() {
-                _showOverlay = !_showOverlay;
-              });
-            },
-          ),
-        ],
         systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark,
-          statusBarBrightness: Brightness.light,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         ),
       ),
       body: Stack(
         children: [
           // 主要内容 - 整合式设计
           SingleChildScrollView(
-            child: Container(
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  // 头部区域 - 静态内容，不需要重建
-                  _buildHeaderSection(),
-
-                  // 验证码显示区域 - 只有这部分需要动态更新
-                  _buildTotpSection(),
-                ],
-              ),
-            ),
-          ),
-
-          // 遮罩层和菜单
-          if (_showOverlay)
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _showOverlay = !_showOverlay;
-                  });
-                },
-                child: Container(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  child: Stack(
-                    children: [
-                      // 菜单面板
-                      Positioned(
-                        top:
-                            MediaQuery.of(context).padding.top + kToolbarHeight,
-                        right: 16,
-                        child: Container(
-                          width: 160,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.2),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _buildMenuItem(
-                                icon: Icons.copy,
-                                title: '复制验证码',
-                                onTap: () {
-                                  final totpCode = TotpService.generateTotp(
-                                    widget.entry,
-                                  );
-                                  Clipboard.setData(
-                                    ClipboardData(text: totpCode),
-                                  );
-                                  setState(() {
-                                    _showOverlay = false;
-                                  });
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('验证码已复制到剪贴板'),
-                                      backgroundColor: Colors.blue,
-                                    ),
-                                  );
-                                },
-                              ),
-                              _buildDivider(),
-                              _buildMenuItem(
-                                icon: Icons.edit,
-                                title: '编辑账户',
-                                onTap: () {
-                                  setState(() {
-                                    _showOverlay = false;
-                                  });
-                                  _editEntry(context);
-                                },
-                              ),
-                              _buildDivider(),
-                              _buildMenuItem(
-                                icon: Icons.info_outline,
-                                title: '账户详情',
-                                onTap: () {
-                                  setState(() {
-                                    _showOverlay = false;
-                                  });
-                                  _showAccountDetails(context);
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 40),
+              child: Container(
+                margin: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.3 : 0.05,
                       ),
-                    ],
-                  ),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // 头部区域 - 静态内容，不需要重建
+                    _buildHeaderSection(theme),
+
+                    // 验证码显示区域 - 只有这部分需要动态更新
+                    _buildTotpSection(theme),
+                  ],
                 ),
               ),
             ),
+          ),
         ],
       ),
     );
   }
 
   // 构建头部区域 - 静态内容，不需要重建
-  Widget _buildHeaderSection() {
+  Widget _buildHeaderSection(ThemeData theme) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.fromLTRB(32, 32, 32, 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surface,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(16),
           topRight: Radius.circular(16),
@@ -236,14 +162,17 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
             width: 90,
             height: 90,
             decoration: BoxDecoration(
-              color: widget.entry.icon.isEmpty
-                  ? const Color(0xFFF0F0F0)
+              color: _currentEntry.icon.isEmpty
+                  ? theme.colorScheme.secondary.withValues(alpha: 0.1)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(20),
-              border: widget.entry.icon.isEmpty
-                  ? Border.all(color: const Color(0xFFE0E0E0), width: 2)
+              border: _currentEntry.icon.isEmpty
+                  ? Border.all(
+                      color: theme.dividerColor.withValues(alpha: 0.2),
+                      width: 2,
+                    )
                   : null,
-              boxShadow: widget.entry.icon.isEmpty
+              boxShadow: _currentEntry.icon.isEmpty
                   ? [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.1),
@@ -255,130 +184,141 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(18),
-              child: _buildEntryIcon(widget.entry),
+              child: _buildEntryIcon(_currentEntry),
             ),
           ),
           const SizedBox(height: 20),
           Text(
-            widget.entry.name.isNotEmpty
-                ? widget.entry.name
-                : (widget.entry.issuer.isNotEmpty ? widget.entry.issuer : '账户'),
-            style: const TextStyle(
+            _currentEntry.name.isNotEmpty
+                ? _currentEntry.name
+                : (_currentEntry.issuer.isNotEmpty
+                      ? _currentEntry.issuer
+                      : '账户'),
+            style: TextStyle(
               fontSize: 20,
-              color: Colors.black87,
+              color: theme.colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
           ),
-          if (widget.entry.issuer.isNotEmpty && widget.entry.name.isNotEmpty)
+          if (_currentEntry.issuer.isNotEmpty && _currentEntry.name.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
-                widget.entry.issuer,
-                style: TextStyle(fontSize: 14, color: Colors.black54),
+                _currentEntry.issuer,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
               ),
             ),
+          // 标签显示
+          if (_currentEntry.tags.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _currentEntry.tags
+                  .map(
+                    (tag) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.primaryColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: theme.primaryColor.withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        tag,
+                        style: TextStyle(
+                          color: theme.primaryColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
         ],
       ),
     );
   }
 
   // 构建验证码区域 - 只有这部分需要动态更新
-  Widget _buildTotpSection() {
+  Widget _buildTotpSection(ThemeData theme) {
     return StreamBuilder<int>(
       stream: Stream.periodic(
         const Duration(seconds: 1),
-        (_) => TotpService.getRemainingTime(widget.entry),
+        (_) => TotpService.getRemainingTime(_currentEntry),
       ),
-      initialData: TotpService.getRemainingTime(widget.entry),
+      initialData: TotpService.getRemainingTime(_currentEntry),
       builder: (context, snapshot) {
         final remainingTime = snapshot.data ?? 30;
-        final totpCode = TotpService.generateTotp(widget.entry);
+        final totpCode = TotpService.generateTotp(_currentEntry);
 
         return Container(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.fromLTRB(32, 20, 32, 32),
           child: Column(
             children: [
-              // 验证码数字 - 更大更突出
+              // 验证码数字 - 进度条在底部
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
                   vertical: 16,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8F8F8),
+                  color: theme.colorScheme.secondary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
-                ),
-                child: Text(
-                  totpCode,
-                  style: const TextStyle(
-                    fontSize: 42,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                    fontFamily: 'monospace',
-                    letterSpacing: 8,
+                  border: Border.all(
+                    color: theme.dividerColor.withValues(alpha: 0.2),
+                    width: 1,
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-
-              // 环形进度条
-              SizedBox(
-                width: 120,
-                height: 120,
-                child: Stack(
-                  alignment: Alignment.center,
+                child: Column(
                   children: [
-                    // 背景圆环
-                    SizedBox(
-                      width: 120,
-                      height: 120,
-                      child: CircularProgressIndicator(
-                        value: 1.0,
-                        strokeWidth: 8,
-                        backgroundColor: Colors.grey.withValues(alpha: 0.1),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Colors.grey.withValues(alpha: 0.2),
-                        ),
+                    Text(
+                      totpCode,
+                      style: TextStyle(
+                        fontSize: 42,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                        fontFamily: 'monospace',
+                        letterSpacing: 8,
                       ),
                     ),
-                    // 进度圆环
-                    SizedBox(
-                      width: 120,
-                      height: 120,
-                      child: CircularProgressIndicator(
-                        value: remainingTime / 30,
-                        strokeWidth: 8,
-                        backgroundColor: Colors.transparent,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          remainingTime <= 5 ? Colors.red : Colors.blue,
+                    const SizedBox(height: 12),
+                    // 进度条 - 在框底部，从右到左，自适应宽度
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: Container(
+                        height: 4,
+                        width: double.infinity,
+                        color: theme.colorScheme.surfaceContainer.withValues(
+                          alpha: 0.3,
+                        ),
+                        child: Stack(
+                          children: [
+                            Align(
+                              alignment: Alignment.topRight,
+                              child: FractionallySizedBox(
+                                widthFactor: remainingTime / 30,
+                                child: Container(
+                                  height: 4,
+                                  color: remainingTime <= 5
+                                      ? Colors.red
+                                      : theme.primaryColor,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    // 中心文字
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '$remainingTime',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: remainingTime <= 5
-                                ? Colors.red
-                                : Colors.blue,
-                          ),
-                        ),
-                        Text(
-                          '秒',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: remainingTime <= 5
-                                ? Colors.red
-                                : Colors.blue,
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
@@ -395,12 +335,13 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
                       onTap: () {
                         Clipboard.setData(ClipboardData(text: totpCode));
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('验证码已复制'),
-                            backgroundColor: Colors.blue,
+                          SnackBar(
+                            content: const Text('验证码已复制'),
+                            backgroundColor: theme.primaryColor,
                           ),
                         );
                       },
+                      theme: theme,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -409,6 +350,7 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
                       icon: Icons.edit,
                       title: '编辑',
                       onTap: () => _editEntry(context),
+                      theme: theme,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -417,6 +359,7 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
                       icon: Icons.info_outline,
                       title: '详情',
                       onTap: () => _showAccountDetails(context),
+                      theme: theme,
                     ),
                   ),
                 ],
@@ -432,6 +375,7 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
+    required ThemeData theme,
   }) {
     return Material(
       color: Colors.transparent,
@@ -441,19 +385,22 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8F8F8),
+            color: theme.colorScheme.secondary.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+            border: Border.all(
+              color: theme.dividerColor.withValues(alpha: 0.2),
+              width: 1,
+            ),
           ),
           child: Column(
             children: [
-              Icon(icon, color: Colors.blue, size: 24),
+              Icon(icon, color: theme.primaryColor, size: 24),
               const SizedBox(height: 8),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Colors.black87,
+                  color: theme.colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -462,36 +409,6 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
         ),
       ),
     );
-  }
-
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Icon(icon, color: Colors.black87, size: 20),
-              const SizedBox(width: 12),
-              Text(
-                title,
-                style: const TextStyle(fontSize: 16, color: Colors.black87),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Container(height: 0.5, color: const Color(0xFFE5E5E5));
   }
 
   // 构建条目图标 - 使用缓存避免闪烁
@@ -520,19 +437,19 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
           content: SingleChildScrollView(
             child: ListBody(
               children: [
-                if (widget.entry.issuer.isNotEmpty)
-                  _DetailRow(title: '发行方', content: widget.entry.issuer),
-                if (widget.entry.name.isNotEmpty)
-                  _DetailRow(title: '账户名', content: widget.entry.name),
+                if (_currentEntry.issuer.isNotEmpty)
+                  _DetailRow(title: '发行方', content: _currentEntry.issuer),
+                if (_currentEntry.name.isNotEmpty)
+                  _DetailRow(title: '账户名', content: _currentEntry.name),
                 _DetailRow(
                   title: '算法',
-                  content: widget.entry.algorithm.toString().split('.').last,
+                  content: _currentEntry.algorithm.toString().split('.').last,
                 ),
                 _DetailRow(
                   title: '位数',
-                  content: widget.entry.digits.toString(),
+                  content: _currentEntry.digits.toString(),
                 ),
-                _DetailRow(title: '周期', content: '${widget.entry.period}秒'),
+                _DetailRow(title: '周期', content: '${_currentEntry.period}秒'),
               ],
             ),
           ),
@@ -545,6 +462,37 @@ class _TotpDisplayScreenState extends State<TotpDisplayScreen> {
         );
       },
     );
+  }
+
+  // 删除条目
+  Future<void> _deleteEntry(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('删除账户'),
+          content: const Text('确定要删除此账户吗？此操作无法撤销。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('删除', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true && mounted) {
+      final totpProvider = Provider.of<TotpProvider>(context, listen: false);
+      await totpProvider.deleteEntry(_currentEntry.id);
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    }
   }
 }
 
@@ -806,179 +754,187 @@ class _EditEntryScreenState extends State<EditEntryScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 16),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
 
-              // 图标输入框
-              TextFormField(
-                controller: _iconController,
-                decoration: InputDecoration(
-                  labelText: '图标',
-                  hintText: '支持图床链接或base64编码图片',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // 多标签输入区域
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '标签',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.7),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  // 标签输入和添加按钮
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _tagController,
-                          decoration: InputDecoration(
-                            hintText: '输入标签后按回车添加',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                          ),
-                          onFieldSubmitted: (value) {
-                            _addTag(value.trim());
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        onPressed: () {
-                          final tag = _tagController.text.trim();
-                          if (tag.isNotEmpty) {
-                            _addTag(tag);
-                          }
-                        },
-                        icon: const Icon(Icons.add),
-                        style: IconButton.styleFrom(
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.primary,
-                          foregroundColor: Theme.of(
-                            context,
-                          ).colorScheme.onPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  // 标签显示区域
-                  if (_tags.isNotEmpty)
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _tags
-                          .map(
-                            (tag) => Chip(
-                              label: Text(tag),
-                              onDeleted: () => _removeTag(tag),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // 发行方输入框
-              TextFormField(
-                controller: _issuerController,
-                decoration: InputDecoration(
-                  labelText: '发行方',
-                  hintText: '例如：Google',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return '请输入发行方';
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: '账户',
-                  hintText: '例如：user@example.com',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return '请输入账户名';
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _secretController,
-                decoration: InputDecoration(
-                  labelText: '密钥',
-                  hintText: '例如：JBSWY3DPEHPK3PXP',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return '请输入密钥';
-                  }
-                  // 简单验证Base32格式
-                  if (!RegExp(
-                    r'^[A-Z2-7]+=*$',
-                  ).hasMatch(value.trim().toUpperCase())) {
-                    return '密钥格式不正确';
-                  }
-
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 24),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _submitForm,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
+                // 发行方输入框
+                TextFormField(
+                  controller: _issuerController,
+                  decoration: InputDecoration(
+                    labelText: '发行方',
+                    hintText: '例如：Google',
+                    border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),
                   ),
-                  child: const Text(
-                    '更新验证器',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return '请输入发行方';
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                // 账户输入框
+                TextFormField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    labelText: '账户',
+                    hintText: '例如：user@example.com',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return '请输入账户名';
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                // 密钥输入框
+                TextFormField(
+                  controller: _secretController,
+                  decoration: InputDecoration(
+                    labelText: '密钥',
+                    hintText: '例如：JBSWY3DPEHPK3PXP',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return '请输入密钥';
+                    }
+                    // 简单验证Base32格式
+                    if (!RegExp(
+                      r'^[A-Z2-7]+=*$',
+                    ).hasMatch(value.trim().toUpperCase())) {
+                      return '密钥格式不正确';
+                    }
+
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 24),
+
+                // 图标输入框
+                TextFormField(
+                  controller: _iconController,
+                  decoration: InputDecoration(
+                    labelText: '图标',
+                    hintText: '支持图床链接或base64编码图片',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                   ),
                 ),
-              ),
-            ],
+
+                const SizedBox(height: 16),
+
+                // 多标签输入区域
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '标签',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // 标签输入和添加按钮
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _tagController,
+                            decoration: InputDecoration(
+                              hintText: '输入标签后按回车添加',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                            ),
+                            onFieldSubmitted: (value) {
+                              _addTag(value.trim());
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: () {
+                            final tag = _tagController.text.trim();
+                            if (tag.isNotEmpty) {
+                              _addTag(tag);
+                            }
+                          },
+                          icon: const Icon(Icons.add),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary,
+                            foregroundColor: Theme.of(
+                              context,
+                            ).colorScheme.onPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // 标签显示区域
+                    if (_tags.isNotEmpty)
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _tags
+                            .map(
+                              (tag) => Chip(
+                                label: Text(tag),
+                                onDeleted: () => _removeTag(tag),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                // 提交按钮
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _submitForm,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                    ),
+                    child: const Text(
+                      '更新验证器',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

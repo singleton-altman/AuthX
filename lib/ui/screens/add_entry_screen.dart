@@ -1,4 +1,3 @@
-
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,8 +22,6 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
   final _iconController = TextEditingController(); // 图标输入控制器
   final _tagController = TextEditingController(); // 标签输入控制器
   final List<String> _tags = []; // 标签列表
-  
-
 
   // 添加标签
   void _addTag(String tag) {
@@ -61,7 +58,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       final String secret = _secretController.text.trim().replaceAll(' ', '');
       final String icon = _iconController.text.trim(); // 获取图标链接
       final List<String> tags = _tags; // 获取标签列表
-      
+
       final TotpEntry entry = TotpEntry(
         id: id,
         name: name,
@@ -70,225 +67,199 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
         icon: icon, // 添加图标字段
         tags: tags, // 添加标签列表
       );
-      
-      final TotpProvider provider = Provider.of<TotpProvider>(context, listen: false);
-      provider.addEntry(entry).then((_) {
-        if (mounted) {
-          Navigator.of(context).pop(true); // 返回true表示添加成功
-        }
-      }).catchError((error) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('添加失败: $error')),
-          );
-        }
-      });
+
+      final TotpProvider provider = Provider.of<TotpProvider>(
+        context,
+        listen: false,
+      );
+      provider
+          .addEntry(entry)
+          .then((_) {
+            if (mounted) {
+              Navigator.of(context).pop(true); // 返回true表示添加成功
+            }
+          })
+          .catchError((error) {
+            if (mounted) {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('添加失败: $error')));
+            }
+          });
     }
   }
 
   String _generateId() {
     final random = Random();
-    return DateTime.now().millisecondsSinceEpoch.toString() + 
-           random.nextInt(10000).toString();
+    return DateTime.now().millisecondsSinceEpoch.toString() +
+        random.nextInt(10000).toString();
   }
-
-
 
   void _checkClipboardForTotpUri() async {
     final ClipboardData? data = await Clipboard.getData(Clipboard.kTextPlain);
     final String? uri = data?.text;
-    
+
     if (uri != null && uri.startsWith('otpauth://') && mounted) {
       try {
         final parsed = TotpParser.parseUri(uri);
         _nameController.text = parsed.name;
         _issuerController.text = parsed.issuer;
         _secretController.text = parsed.secret;
-        
-
-        
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('剪贴板中的内容无法解析: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('剪贴板中的内容无法解析: $e')));
         }
       }
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('剪贴板中未找到有效的TOTP URI')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('剪贴板中未找到有效的TOTP URI')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: theme.appBarTheme.backgroundColor ?? theme.primaryColor,
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         title: Text(
           '添加验证器',
           style: TextStyle(
-            color: theme.appBarTheme.titleTextStyle?.color ?? Colors.white,
+            color: theme.colorScheme.onSurface,
             fontSize: 17,
             fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, 
-               color: theme.appBarTheme.iconTheme?.color ?? Colors.white, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: theme.colorScheme.onSurface,
+            size: 20,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.content_paste, 
-                 color: theme.appBarTheme.iconTheme?.color ?? Colors.white),
+            icon: Icon(Icons.content_paste, color: theme.colorScheme.onSurface),
             onPressed: _checkClipboardForTotpUri,
             tooltip: '从剪贴板导入',
           ),
         ],
-        systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
-        ),
+        surfaceTintColor: Colors.transparent,
       ),
       body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            
-            // 发行方输入框
-            _buildWeChatInputCard(
-              context,
-              controller: _issuerController,
-              labelText: '发行方',
-              hintText: '例如：Google',
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return '请输入发行方';
-                }
-                return null;
-              },
-              icon: Icons.business,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
+
+                // 发行方输入框
+                _buildInputCard(
+                  context: context,
+                  controller: _issuerController,
+                  labelText: '发行方',
+                  hintText: '例如：Google',
+                  icon: Icons.business,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return '请输入发行方';
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 12),
+
+                // 账户输入框
+                _buildInputCard(
+                  context: context,
+                  controller: _nameController,
+                  labelText: '账户',
+                  hintText: '例如：user@example.com',
+                  icon: Icons.person,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return '请输入账户名';
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 12),
+
+                // 密钥输入框
+                _buildInputCard(
+                  context: context,
+                  controller: _secretController,
+                  labelText: '密钥',
+                  hintText: '例如：JBSWY3DPEHPK3PXP',
+                  icon: Icons.vpn_key,
+                  obscureText: true,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return '请输入密钥';
+                    }
+                    if (!RegExp(
+                      r'^[A-Z2-7]+=*$',
+                    ).hasMatch(value.trim().toUpperCase())) {
+                      return '密钥格式不正确';
+                    }
+                    try {
+                      Base32.decode(value.trim().toUpperCase());
+                    } catch (e) {
+                      return '密钥格式无效: $e';
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                // 图标输入框和示例按钮
+                _buildInputCard(
+                  context: context,
+                  controller: _iconController,
+                  labelText: '图标链接 (可选)',
+                  hintText: '支持图床链接或base64编码图片',
+                  icon: Icons.image,
+                ),
+
+                const SizedBox(height: 12),
+
+                // 示例按钮
+                _buildExampleButtons(context),
+
+                const SizedBox(height: 20),
+
+                // 标签输入区域
+                _buildTagsSection(context),
+
+                const SizedBox(height: 30),
+
+                // 提交按钮
+                _buildSubmitButton(context),
+
+                const SizedBox(height: 40),
+              ],
             ),
-            
-            const SizedBox(height: 12),
-            
-            // 账户输入框
-            _buildWeChatInputCard(
-              context,
-              controller: _nameController,
-              labelText: '账户',
-              hintText: '例如：user@example.com',
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return '请输入账户名';
-                }
-                return null;
-              },
-              icon: Icons.person,
-            ),
-            
-            const SizedBox(height: 12),
-            
-            // 密钥输入框
-            _buildWeChatInputCard(
-              context,
-              controller: _secretController,
-              labelText: '密钥',
-              hintText: '例如：JBSWY3DPEHPK3PXP',
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return '请输入密钥';
-                }
-                // 简单验证Base32格式
-                if (!RegExp(r'^[A-Z2-7]+=*$').hasMatch(value.trim().toUpperCase())) {
-                  return '密钥格式不正确';
-                }
-                
-                // 尝试解码以验证密钥有效性
-                try {
-                  Base32.decode(value.trim().toUpperCase());
-                } catch (e) {
-                  return '密钥格式无效: $e';
-                }
-                
-                return null;
-              },
-              icon: Icons.vpn_key,
-              obscureText: true,
-            ),
-            
-            const SizedBox(height: 12),
-            
-            // 图标输入框
-            _buildWeChatInputCard(
-              context,
-              controller: _iconController,
-              labelText: '图标链接 (可选)',
-              hintText: '支持图床链接或base64编码图片',
-              icon: Icons.image,
-            ),
-            
-            const SizedBox(height: 8),
-            
-            // 示例图片按钮
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  TextButton.icon(
-                    onPressed: () {
-                      _iconController.text = 'https://via.placeholder.com/100x100/07C160/FFFFFF?text=APP';
-                    },
-                    icon: const Icon(Icons.link, size: 16),
-                    label: const Text('使用示例网络图片', style: TextStyle(fontSize: 12)),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Theme.of(context).primaryColor,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  TextButton.icon(
-                    onPressed: () {
-                      // 使用一个简单的base64编码的绿色方块图片
-                      _iconController.text = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
-                    },
-                    icon: const Icon(Icons.image, size: 16),
-                    label: const Text('使用示例Base64图片', style: TextStyle(fontSize: 12)),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Theme.of(context).primaryColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 12),
-            
-            // 标签输入区域
-            _buildTagsSection(context),
-            
-            const SizedBox(height: 30),
-            
-            // 提交按钮
-            _buildWeChatButton(context, '添加验证器', _submitForm),
-            
-            const SizedBox(height: 40),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildWeChatInputCard(
-    BuildContext context, {
+  Widget _buildInputCard({
+    required BuildContext context,
     required TextEditingController controller,
     required String labelText,
     required String hintText,
@@ -297,24 +268,21 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     bool obscureText = false,
   }) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(8),
-        border: isDark ? Border.all(color: theme.dividerColor) : null,
+        color: theme.colorScheme.secondary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.dividerColor.withValues(alpha: 0.2),
+          width: 1,
+        ),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         child: Row(
           children: [
-            Icon(
-              icon,
-              color: theme.primaryColor,
-              size: 20,
-            ),
+            Icon(icon, color: theme.primaryColor, size: 20),
             const SizedBox(width: 12),
             Expanded(
               child: TextFormField(
@@ -325,18 +293,18 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                   hintText: hintText,
                   border: InputBorder.none,
                   labelStyle: TextStyle(
-                    color: theme.hintColor,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     fontSize: 14,
                   ),
                   hintStyle: TextStyle(
-                    color: theme.hintColor,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                     fontSize: 14,
                   ),
                 ),
                 validator: validator,
                 style: TextStyle(
                   fontSize: 16,
-                  color: theme.textTheme.bodyLarge?.color,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
             ),
@@ -346,16 +314,94 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     );
   }
 
+  Widget _buildExampleButtons(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Row(
+      children: [
+        Expanded(
+          child: _buildOutlineButton(
+            context: context,
+            icon: Icons.link,
+            label: '网络图片',
+            onPressed: () {
+              _iconController.text =
+                  'https://via.placeholder.com/100x100/07C160/FFFFFF?text=APP';
+            },
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildOutlineButton(
+            context: context,
+            icon: Icons.image,
+            label: 'Base64图片',
+            onPressed: () {
+              _iconController.text =
+                  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOutlineButton({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+  }) {
+    final theme = Theme.of(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.secondary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.dividerColor.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: theme.primaryColor, size: 18),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: theme.primaryColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTagsSection(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(8),
-        border: isDark ? Border.all(color: theme.dividerColor) : null,
+        color: theme.colorScheme.secondary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.dividerColor.withValues(alpha: 0.2),
+          width: 1,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -364,17 +410,14 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.local_offer,
-                  color: theme.primaryColor,
-                  size: 20,
-                ),
+                Icon(Icons.local_offer, color: theme.primaryColor, size: 20),
                 const SizedBox(width: 12),
                 Text(
                   '标签 (可选)',
                   style: TextStyle(
                     fontSize: 16,
-                    color: theme.textTheme.bodyLarge?.color,
+                    color: theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -383,27 +426,42 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
             Row(
               children: [
                 Expanded(
-                  child: TextFormField(
-                    controller: _tagController,
-                    decoration: InputDecoration(
-                      hintText: '输入标签后按回车添加',
-                      border: OutlineInputBorder(
-                        borderRadius: const BorderRadius.all(Radius.circular(6)),
-                        borderSide: BorderSide(color: theme.dividerColor),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainer.withValues(
+                        alpha: 0.3,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      hintStyle: TextStyle(color: theme.hintColor),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    onFieldSubmitted: (value) {
-                      _addTag(value.trim());
-                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: TextFormField(
+                        controller: _tagController,
+                        decoration: InputDecoration(
+                          hintText: '输入标签后按回车',
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                          ),
+                          hintStyle: TextStyle(
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.4,
+                            ),
+                          ),
+                        ),
+                        style: TextStyle(color: theme.colorScheme.onSurface),
+                        onFieldSubmitted: (value) {
+                          _addTag(value.trim());
+                        },
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Container(
                   decoration: BoxDecoration(
                     color: theme.primaryColor,
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
                     onPressed: () {
@@ -412,11 +470,15 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                         _addTag(tag);
                       }
                     },
-                    icon: Icon(Icons.add, color: theme.colorScheme.onPrimary, size: 20),
+                    icon: Icon(
+                      Icons.add,
+                      color: theme.colorScheme.onPrimary,
+                      size: 20,
+                    ),
                     padding: const EdgeInsets.all(8),
                     constraints: const BoxConstraints(
-                      minWidth: 36,
-                      minHeight: 36,
+                      minWidth: 40,
+                      minHeight: 40,
                     ),
                   ),
                 ),
@@ -427,38 +489,46 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: _tags.map((tag) => Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: theme.primaryColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: theme.primaryColor.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        tag,
-                        style: TextStyle(
-                          color: theme.primaryColor,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                children: _tags
+                    .map(
+                      (tag) => Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.primaryColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: theme.primaryColor.withValues(alpha: 0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              tag,
+                              style: TextStyle(
+                                color: theme.primaryColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            GestureDetector(
+                              onTap: () => _removeTag(tag),
+                              child: Icon(
+                                Icons.close,
+                                color: theme.primaryColor,
+                                size: 16,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      GestureDetector(
-                        onTap: () => _removeTag(tag),
-                        child: Icon(
-                          Icons.close,
-                          color: theme.primaryColor,
-                          size: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                )).toList(),
+                    )
+                    .toList(),
               ),
             ],
           ],
@@ -467,29 +537,28 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     );
   }
 
-  Widget _buildWeChatButton(BuildContext context, String text, VoidCallback onPressed) {
+  Widget _buildSubmitButton(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
       width: double.infinity,
-      height: 48,
+      height: 50,
       decoration: BoxDecoration(
         color: theme.primaryColor,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(6),
+          onTap: _submitForm,
+          borderRadius: BorderRadius.circular(12),
           child: Center(
             child: Text(
-              text,
+              '添加验证器',
               style: TextStyle(
                 color: theme.colorScheme.onPrimary,
                 fontSize: 16,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),

@@ -9,28 +9,36 @@ class AppearanceSettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF07C160),
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
-        title: const Text(
+        surfaceTintColor: Colors.transparent,
+        title: Text(
           '外观设置',
           style: TextStyle(
-            color: Colors.white,
+            color: theme.colorScheme.onSurface,
             fontSize: 17,
             fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: theme.colorScheme.onSurface,
+            size: 20,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        systemOverlayStyle: const SystemUiOverlayStyle(
+        systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
-          statusBarBrightness: Brightness.dark,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         ),
       ),
       body: const _AppearanceSettingsBody(),
@@ -52,47 +60,40 @@ class _AppearanceSettingsBodyState extends State<_AppearanceSettingsBody> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     
     return SingleChildScrollView(
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
-          
-          // 主题设置
-          _buildWeChatSettingsGroup(
-            context,
-            title: '主题模式',
-            children: [
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // 主题设置
+            _buildSettingsCard(context, title: '主题模式', children: [
               _buildThemeOption(
                 context,
                 title: '浅色模式',
-                icon: Icons.wb_sunny,
+                icon: Icons.wb_sunny_outlined,
                 isSelected: themeProvider.themeMode == ThemeMode.light,
                 onTap: () => themeProvider.setThemeMode(ThemeMode.light),
               ),
               _buildThemeOption(
                 context,
                 title: '深色模式',
-                icon: Icons.nightlight,
+                icon: Icons.nightlight_outlined,
                 isSelected: themeProvider.themeMode == ThemeMode.dark,
                 onTap: () => themeProvider.setThemeMode(ThemeMode.dark),
               ),
               _buildThemeOption(
                 context,
                 title: '跟随系统',
-                icon: Icons.settings_system_daydream,
+                icon: Icons.settings_system_daydream_outlined,
                 isSelected: themeProvider.themeMode == ThemeMode.system,
                 onTap: () => themeProvider.setThemeMode(ThemeMode.system),
                 showDivider: false,
               ),
-            ],
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // 颜色设置
-          _buildWeChatSettingsGroup(
-            context,
-            title: '主题颜色',
-            children: [
+            ]),
+            
+            const SizedBox(height: 24),
+            
+            // 颜色设置
+            _buildSettingsCard(context, title: '主题颜色', children: [
               _buildColorOption(
                 context,
                 title: '主色调',
@@ -108,66 +109,56 @@ class _AppearanceSettingsBodyState extends State<_AppearanceSettingsBody> {
                 onTap: () => _resetColors(themeProvider),
                 showDivider: false,
               ),
-            ],
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // 显示设置
-          _buildWeChatSettingsGroup(
-            context,
-            title: '显示设置',
-            children: [
-              _buildSliderOption(
-                context,
-                title: '头像大小',
-                subtitle: '调整验证器列表中的头像大小',
-                value: themeProvider.avatarSize,
-                min: 32.0,
-                max: 64.0,
-                onChanged: (value) => themeProvider.setAvatarSize(value),
-              ),
-              _buildSliderOption(
-                context,
-                title: '验证码大小',
-                subtitle: '调整验证码字体大小',
-                value: themeProvider.codeFontSize,
-                min: 16.0,
-                max: 28.0,
-                onChanged: (value) => themeProvider.setCodeFontSize(value),
-                showDivider: false,
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 40),
-        ],
+            ]),
+            
+            const SizedBox(height: 40),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildWeChatSettingsGroup(
+  Widget _buildSettingsCard(
     BuildContext context, {
     required String title,
     required List<Widget> children,
   }) {
+    final theme = Theme.of(context);
+    
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: theme.brightness == Brightness.dark ? 0.3 : 0.05,
+            ),
+            blurRadius: theme.brightness == Brightness.dark ? 0 : 10,
+            offset: theme.brightness == Brightness.dark
+                ? Offset.zero
+                : const Offset(0, 2),
+          ),
+        ],
+        border: theme.brightness == Brightness.dark
+            ? Border.all(
+                color: theme.dividerColor.withValues(alpha: 0.2),
+                width: 1,
+              )
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey,
-                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -185,45 +176,81 @@ class _AppearanceSettingsBodyState extends State<_AppearanceSettingsBody> {
     required VoidCallback onTap,
     bool showDivider = true,
   }) {
+    final theme = Theme.of(context);
+    
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             border: showDivider
-                ? const Border(
+                ? Border(
                     bottom: BorderSide(
-                      color: Color(0xFFE5E5E5),
-                      width: 0.5,
+                      color: theme.dividerColor.withValues(alpha: 0.2),
+                      width: 1,
                     ),
                   )
                 : null,
           ),
           child: Row(
             children: [
-              Icon(
-                icon,
-                color: const Color(0xFF07C160),
-                size: 22,
+              // 图标容器
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: theme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: theme.primaryColor,
+                  size: 24,
+                ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
+              
+              // 文字内容
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
-                    color: Colors.black87,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
               ),
+              
+              // 选中状态
               if (isSelected)
-                const Icon(
-                  Icons.check,
-                  color: Color(0xFF07C160),
-                  size: 20,
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: theme.primaryColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.check,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                )
+              else
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
             ],
           ),
@@ -240,71 +267,86 @@ class _AppearanceSettingsBodyState extends State<_AppearanceSettingsBody> {
     required VoidCallback onTap,
     bool showDivider = true,
   }) {
+    final theme = Theme.of(context);
+    
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             border: showDivider
-                ? const Border(
+                ? Border(
                     bottom: BorderSide(
-                      color: Color(0xFFE5E5E5),
-                      width: 0.5,
+                      color: theme.dividerColor.withValues(alpha: 0.2),
+                      width: 1,
                     ),
                   )
                 : null,
           ),
           child: Row(
             children: [
-              if (color != null)
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.grey.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                  ),
-                )
-              else
-                const Icon(
-                  Icons.refresh,
-                  color: Color(0xFF07C160),
-                  size: 24,
+              // 图标容器
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: theme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              const SizedBox(width: 12),
+                child: color != null
+                    ? Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: color,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            width: 2,
+                          ),
+                        ),
+                      )
+                    : Icon(
+                        Icons.refresh_outlined,
+                        color: theme.primaryColor,
+                        size: 24,
+                      ),
+              ),
+              const SizedBox(width: 16),
+              
+              // 文字内容
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
-                        color: Colors.grey,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(
+              
+              // 箭头图标
+              Icon(
                 Icons.arrow_forward_ios,
-                color: Colors.grey,
-                size: 12,
+                size: 16,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ],
           ),
@@ -313,79 +355,7 @@ class _AppearanceSettingsBodyState extends State<_AppearanceSettingsBody> {
     );
   }
 
-  Widget _buildSliderOption(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required double value,
-    required double min,
-    required double max,
-    required ValueChanged<double> onChanged,
-    bool showDivider = true,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: showDivider
-            ? const Border(
-                bottom: BorderSide(
-                  color: Color(0xFFE5E5E5),
-                  width: 0.5,
-                ),
-              )
-            : null,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                value.round().toString(),
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF07C160),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Slider(
-            value: value,
-            min: min,
-            max: max,
-            activeColor: const Color(0xFF07C160),
-            inactiveColor: const Color(0xFF07C160).withValues(alpha: 0.2),
-            onChanged: onChanged,
-          ),
-        ],
-      ),
-    );
-  }
+
 
   void _showColorPicker(BuildContext context, ThemeProvider themeProvider) {
     showDialog(
